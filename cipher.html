@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Wordle Clone</title>
+  <style>
+    /* Basic page styling */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    /* Board styling */
+    #board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      gap: 5px;
+    }
+
+    .tile {
+      width: 50px;
+      height: 50px;
+      border: 2px solid #ccc;
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    /* Color feedback similar to Wordle */
+    .correct {
+      background-color: #6aaa64;
+      border-color: #6aaa64;
+      color: white;
+    }
+    .present {
+      background-color: #c9b458;
+      border-color: #c9b458;
+      color: white;
+    }
+    .absent {
+      background-color: #787c7e;
+      border-color: #787c7e;
+      color: white;
+    }
+
+    /* Input styling */
+    #controls {
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 150px;
+      text-transform: lowercase;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    #message {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Wordle Clone</h1>
+  <!-- The game board -->
+  <div id="board"></div>
+
+  <!-- Controls for entering a guess -->
+  <div id="controls">
+    <input
+      type="text"
+      id="guessInput"
+      maxlength="5"
+      placeholder="Enter 5-letter word"
+      autofocus
+    />
+    <button id="submitGuess">Submit</button>
+  </div>
+
+  <!-- A paragraph to display messages -->
+  <p id="message"></p>
+
+  <script>
+    // The target word (in a more advanced version, choose a random word from a list)
+    const answer = "apple";
+    let currentRow = 0;
+    const maxRows = 6;
+
+    // Build the game board (6 rows of 5 tiles)
+    const board = document.getElementById("board");
+    const rows = [];
+    for (let i = 0; i < maxRows; i++) {
+      const rowDiv = document.createElement("div");
+      rowDiv.classList.add("row");
+      const tiles = [];
+      for (let j = 0; j < 5; j++) {
+        const tileDiv = document.createElement("div");
+        tileDiv.classList.add("tile");
+        rowDiv.appendChild(tileDiv);
+        tiles.push(tileDiv);
+      }
+      board.appendChild(rowDiv);
+      rows.push(tiles);
+    }
+
+    // Function to process a guess when the user clicks "Submit" or presses Enter
+    function submitGuess() {
+      const guessInput = document.getElementById("guessInput");
+      const guess = guessInput.value.toLowerCase();
+      const message = document.getElementById("message");
+
+      // Ensure the guess is exactly 5 letters long
+      if (guess.length !== 5) {
+        message.textContent = "Please enter a 5-letter word.";
+        return;
+      }
+      message.textContent = ""; // Clear any previous message
+
+      // Convert both guess and answer into arrays for letter-by-letter evaluation
+      const guessArray = guess.split("");
+      const answerArray = answer.split("");
+
+      // This array will hold the feedback for each letter:
+      // "correct" (green) if the letter is in the right spot,
+      // "present" (yellow) if the letter is in the word but in the wrong spot,
+      // "absent" (gray) if the letter is not in the word.
+      const letterResult = Array(5).fill("absent");
+
+      // First pass: mark correct letters (green)
+      for (let i = 0; i < 5; i++) {
+        if (guessArray[i] === answerArray[i]) {
+          letterResult[i] = "correct";
+          answerArray[i] = null; // Mark this letter as matched so it isn't reused
+        }
+      }
+
+      // Second pass: mark present letters (yellow)
+      for (let i = 0; i < 5; i++) {
+        if (letterResult[i] === "correct") continue;
+        const foundIndex = answerArray.indexOf(guessArray[i]);
+        if (foundIndex !== -1) {
+          letterResult[i] = "present";
+          answerArray[foundIndex] = null; // Prevent reusing the same letter
+        }
+      }
+
+      // Update the board with the guess and color feedback
+      for (let i = 0; i < 5; i++) {
+        const tile = rows[currentRow][i];
+        tile.textContent = guessArray[i];
+        tile.classList.add(letterResult[i]);
+      }
+
+      // Check if the guess is correct
+      if (guess === answer) {
+        message.textContent = "Congratulations! You guessed the word!";
+        document.getElementById("guessInput").disabled = true;
+        return;
+      } else {
+        currentRow++;
+        if (currentRow === maxRows) {
+          message.textContent = "Game Over! The correct word was: " + answer;
+          document.getElementById("guessInput").disabled = true;
+          return;
+        }
+      }
+
+      // Prepare for the next guess
+      guessInput.value = "";
+      guessInput.focus();
+    }
+
+    // Event listeners for button click and pressing the Enter key
+    document
+      .getElementById("submitGuess")
+      .addEventListener("click", submitGuess);
+
+    document.getElementById("guessInput").addEventListener("keyup", function (
+      event
+    ) {
+      if (event.key === "Enter") {
+        submitGuess();
+      }
+    });
+  </script>
+</body>
+</html>
