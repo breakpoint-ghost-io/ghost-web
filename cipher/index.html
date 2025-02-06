@@ -2,212 +2,333 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Simple Wordle Clone</title>
+  <title>Cipher</title>
   <style>
-    /* Basic page styling */
+    /* CSS Variables for font and color management */
+    :root {
+      --font-primary: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      --font-heading: 'Georgia', serif;
+      --color-bg: #f5f5f5;
+      --color-text: #333;
+      --color-correct: #6aaa64;
+      --color-present: #c9b458;
+      --color-absent: #787c7e;
+      --color-border: #ccc;
+      --color-button: #6aaa64;
+      --color-button-disabled: #aaa;
+      --color-footer: #999;
+    }
+
+    /* Global Styles */
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      margin: 0;
+      font-family: var(--font-primary);
+      background-color: var(--color-bg);
+      color: var(--color-text);
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 20px;
+      min-height: 100vh;
     }
 
-    h1 {
+    /* Container for the entire game UI (header, board, controls) */
+    .game-container {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Header: contains the title and Play Again button */
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 20px;
+    }
+    header h1 {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      margin: 0;
+      line-height: 1.2;
+    }
+    header button {
+      padding: 8px 12px;
+      font-size: 1rem;
+      background-color: var(--color-button);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    header button:disabled {
+      background-color: var(--color-button-disabled);
+      cursor: not-allowed;
+    }
+
+    /* Main Game UI */
+    main {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     /* Board styling */
     #board {
       display: grid;
-      grid-template-rows: repeat(6, 1fr);
-      gap: 5px;
+      grid-template-rows: repeat(6, auto);
+      gap: 8px;
       margin-bottom: 20px;
+      width: 100%;
     }
-
     .row {
       display: grid;
-      grid-template-columns: repeat(5, 50px);
+      grid-template-columns: repeat(5, 1fr);
       gap: 5px;
     }
-
     .tile {
-      width: 50px;
-      height: 50px;
-      border: 2px solid #ccc;
+      width: 100%;
+      padding-top: 100%; /* Creates a responsive square */
+      position: relative;
+      border: 2px solid var(--color-border);
       background-color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 24px;
-      font-weight: bold;
       text-transform: uppercase;
+      border-radius: 4px;
     }
-
-    /* Color feedback similar to Wordle */
+    .tile > span {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
     .correct {
-      background-color: #6aaa64;
-      border-color: #6aaa64;
+      background-color: var(--color-correct);
+      border-color: var(--color-correct);
       color: white;
     }
     .present {
-      background-color: #c9b458;
-      border-color: #c9b458;
+      background-color: var(--color-present);
+      border-color: var(--color-present);
       color: white;
     }
     .absent {
-      background-color: #787c7e;
-      border-color: #787c7e;
+      background-color: var(--color-absent);
+      border-color: var(--color-absent);
       color: white;
     }
 
-    /* Input styling */
+    /* Input and controls styling */
     #controls {
-      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+      width: 100%;
     }
-
-    input[type="text"] {
+    #guessInput {
+      flex: 1;
       padding: 10px;
       font-size: 16px;
-      width: 150px;
       text-transform: lowercase;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
     }
-    button {
+    button#submitGuess {
       padding: 10px 15px;
       font-size: 16px;
-      margin-left: 10px;
+      background-color: var(--color-button);
+      color: white;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
     }
+    button#submitGuess:disabled {
+      background-color: var(--color-button-disabled);
+      cursor: not-allowed;
+    }
 
+    /* Message styling */
     #message {
-      font-size: 18px;
-      margin-top: 10px;
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 20px;
+      word-wrap: break-word;
+    }
+
+    /* Footer styling */
+    footer {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      text-align: center;
+      color: var(--color-footer);
+    }
+    footer a {
+      color: var(--color-footer);
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <h1>Wordle Clone</h1>
-  <!-- The game board -->
-  <div id="board"></div>
+  <div class="game-container">
+    <!-- Header with Title and Play Again Button -->
+    <header>
+      <h1>Cipher</h1>
+      <button id="playAgain" style="display:none;">Play Again</button>
+    </header>
+    
+    <!-- Main Game UI -->
+    <main>
+      <!-- Game Board -->
+      <div id="board"></div>
 
-  <!-- Controls for entering a guess -->
-  <div id="controls">
-    <input
-      type="text"
-      id="guessInput"
-      maxlength="5"
-      placeholder="Enter 5-letter word"
-      autofocus
-    />
-    <button id="submitGuess">Submit</button>
+      <!-- Input Controls -->
+      <div id="controls">
+        <input type="text" id="guessInput" maxlength="5" placeholder="Enter 5-letter word" autofocus />
+        <button id="submitGuess">Submit</button>
+      </div>
+
+      <!-- Message Display -->
+      <p id="message"></p>
+    </main>
   </div>
-
-  <!-- A paragraph to display messages -->
-  <p id="message"></p>
+  
+  <!-- Footer -->
+  <footer>
+    <p>Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io" target="_blank">Breakpoint</a>.</p>
+  </footer>
 
   <script>
-    // The target word (in a more advanced version, choose a random word from a list)
-    const answer = "apple";
+    // List of possible target words
+    const words = ["apple", "brace", "cloud", "drive", "eager", "flare", "ghost", "humid"];
+    let answer;
     let currentRow = 0;
     const maxRows = 6;
+    let rows = [];
 
-    // Build the game board (6 rows of 5 tiles)
     const board = document.getElementById("board");
-    const rows = [];
-    for (let i = 0; i < maxRows; i++) {
-      const rowDiv = document.createElement("div");
-      rowDiv.classList.add("row");
-      const tiles = [];
-      for (let j = 0; j < 5; j++) {
-        const tileDiv = document.createElement("div");
-        tileDiv.classList.add("tile");
-        rowDiv.appendChild(tileDiv);
-        tiles.push(tileDiv);
+
+    // Create the game board (6 rows of 5 tiles)
+    function createBoard() {
+      board.innerHTML = "";
+      rows = [];
+      for (let i = 0; i < maxRows; i++) {
+        const rowDiv = document.createElement("div");
+        rowDiv.classList.add("row");
+        const tiles = [];
+        for (let j = 0; j < 5; j++) {
+          const tileDiv = document.createElement("div");
+          tileDiv.classList.add("tile");
+          const span = document.createElement("span");
+          tileDiv.appendChild(span);
+          rowDiv.appendChild(tileDiv);
+          tiles.push(tileDiv);
+        }
+        board.appendChild(rowDiv);
+        rows.push(tiles);
       }
-      board.appendChild(rowDiv);
-      rows.push(tiles);
     }
 
-    // Function to process a guess when the user clicks "Submit" or presses Enter
+    // Initialize a new game session
+    function newGame() {
+      currentRow = 0;
+      answer = words[Math.floor(Math.random() * words.length)];
+      createBoard();
+      document.getElementById("message").textContent = "";
+      const guessInput = document.getElementById("guessInput");
+      guessInput.value = "";
+      guessInput.disabled = false;
+      guessInput.focus();
+      document.getElementById("submitGuess").disabled = false;
+      document.getElementById("playAgain").style.display = "none";
+    }
+
+    // Process the guess when submitted
     function submitGuess() {
       const guessInput = document.getElementById("guessInput");
       const guess = guessInput.value.toLowerCase();
       const message = document.getElementById("message");
 
-      // Ensure the guess is exactly 5 letters long
+      // Validate input length
       if (guess.length !== 5) {
         message.textContent = "Please enter a 5-letter word.";
         return;
       }
-      message.textContent = ""; // Clear any previous message
+      message.textContent = "";
 
-      // Convert both guess and answer into arrays for letter-by-letter evaluation
       const guessArray = guess.split("");
-      const answerArray = answer.split("");
+      let answerArray = answer.split("");
 
-      // This array will hold the feedback for each letter:
-      // "correct" (green) if the letter is in the right spot,
-      // "present" (yellow) if the letter is in the word but in the wrong spot,
-      // "absent" (gray) if the letter is not in the word.
+      // Array to store feedback for each letter: "correct", "present", or "absent"
       const letterResult = Array(5).fill("absent");
 
-      // First pass: mark correct letters (green)
+      // First pass: mark correct letters
       for (let i = 0; i < 5; i++) {
         if (guessArray[i] === answerArray[i]) {
           letterResult[i] = "correct";
-          answerArray[i] = null; // Mark this letter as matched so it isn't reused
+          answerArray[i] = null; // mark as matched
         }
       }
 
-      // Second pass: mark present letters (yellow)
+      // Second pass: mark present letters
       for (let i = 0; i < 5; i++) {
         if (letterResult[i] === "correct") continue;
         const foundIndex = answerArray.indexOf(guessArray[i]);
         if (foundIndex !== -1) {
           letterResult[i] = "present";
-          answerArray[foundIndex] = null; // Prevent reusing the same letter
+          answerArray[foundIndex] = null;
         }
       }
 
-      // Update the board with the guess and color feedback
+      // Update the board for the current row
       for (let i = 0; i < 5; i++) {
         const tile = rows[currentRow][i];
-        tile.textContent = guessArray[i];
+        tile.querySelector("span").textContent = guessArray[i];
         tile.classList.add(letterResult[i]);
       }
 
-      // Check if the guess is correct
+      // Check for a win
       if (guess === answer) {
         message.textContent = "Congratulations! You guessed the word!";
-        document.getElementById("guessInput").disabled = true;
+        endGame();
         return;
       } else {
         currentRow++;
         if (currentRow === maxRows) {
           message.textContent = "Game Over! The correct word was: " + answer;
-          document.getElementById("guessInput").disabled = true;
+          endGame();
           return;
         }
       }
 
-      // Prepare for the next guess
       guessInput.value = "";
       guessInput.focus();
     }
 
-    // Event listeners for button click and pressing the Enter key
-    document
-      .getElementById("submitGuess")
-      .addEventListener("click", submitGuess);
+    // End the game and show the Play Again button in the header
+    function endGame() {
+      document.getElementById("guessInput").disabled = true;
+      document.getElementById("submitGuess").disabled = true;
+      document.getElementById("playAgain").style.display = "inline-block";
+    }
 
-    document.getElementById("guessInput").addEventListener("keyup", function (
-      event
-    ) {
+    // Event listeners for the Submit and Play Again buttons and the Enter key
+    document.getElementById("submitGuess").addEventListener("click", submitGuess);
+    document.getElementById("guessInput").addEventListener("keyup", function(event) {
       if (event.key === "Enter") {
         submitGuess();
       }
     });
+    document.getElementById("playAgain").addEventListener("click", newGame);
+
+    // Start a new game when the page loads
+    newGame();
   </script>
 </body>
 </html>
