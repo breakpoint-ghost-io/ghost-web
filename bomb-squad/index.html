@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bomb Squad</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* -----------------------------------------------------
+       CSS Variables & Basic Styles
+    ----------------------------------------------------- */
+    :root {
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --accent-color: #007AFF;
+      --bomb-color: #E74C3C;
+      --background-color: #EFEFF4;
+      --cell-covered: #bbb;
+      --cell-uncovered: #eee;
+      --border-color: #888;
+      --text-color: #000;
+    }
+    
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: var(--font-system);
+      background-color: var(--background-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    h1 {
+      margin-bottom: 20px;
+      font-size: 28px;
+      text-align: center;
+    }
+    
+    /* -----------------------------------------------------
+       Board Styles
+    ----------------------------------------------------- */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-template-rows: repeat(5, 60px);
+      gap: 8px; /* Horizontal and vertical padding between slots */
+      margin-bottom: 20px;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      border: 2px solid var(--border-color);
+      background-color: var(--cell-covered);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 4px; /* Slight rounding for a modern look */
+    }
+    /* When uncovered, change background */
+    .cell.uncovered {
+      background-color: var(--cell-uncovered);
+      cursor: default;
+    }
+    /* Bomb cells (revealed when game over) */
+    .cell.bomb {
+      background-color: var(--bomb-color);
+      color: #fff;
+      font-weight: bold;
+    }
+    
+    /* -----------------------------------------------------
+       Controls and Status
+    ----------------------------------------------------- */
+    .status {
+      font-size: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: var(--text-color);
+    }
+    #resetBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none; /* Hidden until game over */
+    }
+    
+    /* -----------------------------------------------------
+       Footer (Attribution)
+    ----------------------------------------------------- */
+    footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--text-color);
+      text-align: center;
+    }
+    footer a {
+      text-decoration: underline;
+      color: var(--accent-color);
+    }
+  </style>
+</head>
+<body>
+  <h1>Bomb Squad</h1>
+  <div id="board"></div>
+  <div class="status" id="status">Good luck!</div>
+  <button id="resetBtn">Reset Game</button>
+  <footer>
+    <p>Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io" target="_blank">Breakpoint</a>.</p>
+  </footer>
+
+  <script>
+    // =====================================================
+    // Game Configuration and State
+    // =====================================================
+    const BOARD_SIZE = 5;
+    const NUM_BOMBS = 5;
+    let board = []; // 2D array to hold cell objects
+    let gameOver = false;
+    
+    // Each cell is an object: { bomb: Boolean, clue: Number, uncovered: Boolean }
+    
+    // =====================================================
+    // Initialize the board and place bombs
+    // =====================================================
+    function initBoard() {
+      board = [];
+      // Create empty board
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        board[r] = [];
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          board[r][c] = { bomb: false, clue: 0, uncovered: false };
+        }
+      }
+      // Randomly place NUM_BOMBS bombs
+      let bombsPlaced = 0;
+      while (bombsPlaced < NUM_BOMBS) {
+        let r = Math.floor(Math.random() * BOARD_SIZE);
+        let c = Math.floor(Math.random() * BOARD_SIZE);
+        if (!board[r][c].bomb) {
+          board[r][c].bomb = true;
+          bombsPlaced++;
+        }
+      }
+      // Calculate clues for each cell that is not a bomb
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (!board[r][c].bomb) {
+            board[r][c].clue = countAdjacentBombs(r, c);
+          }
+        }
+      }
+    }
+    
+    // =====================================================
+    // Count bombs adjacent to cell (r, c)
+    // =====================================================
+    function countAdjacentBombs(r, c) {
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          let nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+            if (board[nr][nc].bomb) count++;
+          }
+        }
+      }
+      return count;
+    }
+    
+    // =====================================================
+    // Render the board to the DOM
+    // =====================================================
+    function renderBoard() {
+      const boardDiv = document.getElementById('board');
+      boardDiv.innerHTML = ''; // Clear previous content
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          const cellDiv = document.createElement('div');
+          cellDiv.classList.add('cell');
+          cellDiv.dataset.row = r;
+          cellDiv.dataset.col = c;
+          
+          // If cell is uncovered or game is over, reveal its content
+          if (board[r][c].uncovered || gameOver) {
+            cellDiv.classList.add('uncovered');
+            if (board[r][c].bomb) {
+              cellDiv.classList.add('bomb');
+              cellDiv.textContent = "💣";
+            } else if (board[r][c].clue > 0) {
+              cellDiv.textContent = board[r][c].clue;
+            } // If clue is 0, leave blank
+          }
+          // Attach click handler only if game is not over and cell is still covered
+          if (!gameOver && !board[r][c].uncovered) {
+            cellDiv.addEventListener('click', onCellClick);
+          }
+          
+          boardDiv.appendChild(cellDiv);
+        }
+      }
+    }
+    
+    // =====================================================
+    // Flood fill to uncover empty (zero clue) cells and their neighbors
+    // =====================================================
+    function floodFill(r, c) {
+      // Base conditions: if out of bounds or already uncovered, return.
+      if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return;
+      if (board[r][c].uncovered) return;
+      
+      board[r][c].uncovered = true;
+      
+      // If this cell has a clue (non-zero) then do not flood fill further.
+      if (board[r][c].clue > 0) return;
+      
+      // Otherwise, recursively uncover neighbors.
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          floodFill(r + dr, c + dc);
+        }
+      }
+    }
+    
+    // =====================================================
+    // Handle a click on a cell
+    // =====================================================
+    function onCellClick(e) {
+      if (gameOver) return;
+      
+      const r = parseInt(e.currentTarget.dataset.row, 10);
+      const c = parseInt(e.currentTarget.dataset.col, 10);
+      
+      // If the cell is already uncovered, ignore
+      if (board[r][c].uncovered) return;
+      
+      // If the clicked cell contains a bomb, game over
+      if (board[r][c].bomb) {
+        board[r][c].uncovered = true;
+        gameOver = true;
+        updateStatus("Game Over! You hit a bomb!");
+        revealAllBombs();
+        renderBoard();
+        document.getElementById('resetBtn').style.display = "inline-block";
+        return;
+      }
+      
+      // Uncover this cell. If its clue is 0, perform flood fill.
+      board[r][c].uncovered = true;
+      if (board[r][c].clue === 0) {
+        floodFill(r, c);
+      }
+      
+      renderBoard();
+      
+      // Check for win: if all non-bomb cells are uncovered, player wins.
+      if (checkWin()) {
+        gameOver = true;
+        updateStatus("Congratulations! You win!");
+        revealAllBombs();
+        renderBoard();
+        document.getElementById('resetBtn').style.display = "inline-block";
+        return;
+      }
+    }
+    
+    // =====================================================
+    // Reveal all bombs (used when game ends)
+    // =====================================================
+    function revealAllBombs() {
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (board[r][c].bomb) {
+            board[r][c].uncovered = true;
+          }
+        }
+      }
+    }
+    
+    // =====================================================
+    // Check if all non-bomb cells are uncovered (win condition)
+    // =====================================================
+    function checkWin() {
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (!board[r][c].bomb && !board[r][c].uncovered) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    
+    // =====================================================
+    // Update the status message
+    // =====================================================
+    function updateStatus(message) {
+      document.getElementById('status').textContent = message;
+    }
+    
+    // =====================================================
+    // Reset the game state and update the UI
+    // =====================================================
+    function resetGame() {
+      initBoard();
+      gameOver = false;
+      updateStatus("Good luck!");
+      document.getElementById('resetBtn').style.display = "none";
+      renderBoard();
+    }
+    
+    // =====================================================
+    // Attach event listener to the reset button
+    // =====================================================
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    
+    // =====================================================
+    // Initialize the game on page load
+    // =====================================================
+    resetGame();
+  </script>
+</body>
+</html>
