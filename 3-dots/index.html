@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3 Dots</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* -----------------------------------------------------
+       CSS Variables & Basic Styles
+    ----------------------------------------------------- */
+    :root {
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --accent-color: #007AFF;
+      --background-color: #EFEFF4;
+      --card-bg: #FFFFFF;
+      --border-color: #C6C6C8;
+      --text-color: #000;
+      --x-color: #E74C3C;
+      --o-color: #F1C40F;
+    }
+    
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: var(--font-system);
+      background-color: var(--background-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    h1 {
+      margin-bottom: 20px;
+      font-size: 28px;
+      text-align: center;
+    }
+    
+    /* -----------------------------------------------------
+       Board Styles
+    ----------------------------------------------------- */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px; /* padding between slots */
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 20px;
+    }
+    .cell {
+      background-color: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      /* Ensure the cell is square */
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: var(--text-color);
+      cursor: pointer;
+      user-select: none;
+    }
+    /* Styling for X and O */
+    .cell.x {
+      color: var(--x-color);
+    }
+    .cell.o {
+      color: var(--o-color);
+    }
+    
+    /* -----------------------------------------------------
+       Controls and Status
+    ----------------------------------------------------- */
+    .status {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: var(--text-color);
+    }
+    #resetBtn {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none; /* Hidden until game over */
+    }
+    
+    /* -----------------------------------------------------
+       Footer (Attribution)
+    ----------------------------------------------------- */
+    footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--text-color);
+      text-align: center;
+    }
+    footer a {
+      text-decoration: underline;
+      color: var(--accent-color);
+    }
+  </style>
+</head>
+<body>
+  <h1>3 Dots</h1>
+  <div id="board"></div>
+  <div class="status" id="status">Current Turn: X</div>
+  <button id="resetBtn">Reset Game</button>
+  <footer>
+    <p>Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io" target="_blank">Breakpoint</a>.</p>
+  </footer>
+
+  <script>
+    // =====================================================
+    // Game Configuration and State
+    // =====================================================
+    const rows = 3, cols = 3;
+    let board = [];
+    let currentPlayer = 'x'; // Player 1 is X, Player 2 is O
+    let gameOver = false;
+
+    // =====================================================
+    // Initialize the board (3x3 grid filled with null)
+    // =====================================================
+    function initBoard() {
+      board = [];
+      for (let r = 0; r < rows; r++) {
+        board[r] = [];
+        for (let c = 0; c < cols; c++) {
+          board[r][c] = null;
+        }
+      }
+    }
+
+    // =====================================================
+    // Render the board in the grid container
+    // =====================================================
+    function renderBoard() {
+      const boardDiv = document.getElementById('board');
+      boardDiv.innerHTML = ''; // Clear previous content
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cellDiv = document.createElement('div');
+          cellDiv.classList.add('cell');
+          // If a move exists, add the corresponding class (x or o)
+          if (board[r][c]) {
+            cellDiv.classList.add(board[r][c]);
+            cellDiv.textContent = board[r][c].toUpperCase();
+          }
+          // Store the cell's coordinates
+          cellDiv.dataset.row = r;
+          cellDiv.dataset.col = c;
+          // Attach click event listener if game not over
+          cellDiv.addEventListener('click', onCellClick);
+          boardDiv.appendChild(cellDiv);
+        }
+      }
+    }
+
+    // =====================================================
+    // Handle a cell click event
+    // =====================================================
+    function onCellClick(e) {
+      if (gameOver) return;
+      const row = parseInt(e.currentTarget.dataset.row, 10);
+      const col = parseInt(e.currentTarget.dataset.col, 10);
+      // If cell is already marked, do nothing
+      if (board[row][col]) return;
+      // Mark the cell with current player's symbol
+      board[row][col] = currentPlayer;
+      renderBoard();
+      // Check for winner
+      const winner = checkWinner();
+      if (winner) {
+        updateStatus("Winner: " + (winner.toUpperCase()));
+        gameOver = true;
+        document.getElementById('resetBtn').style.display = "inline-block";
+      } else if (isBoardFull()) {
+        updateStatus("It's a draw!");
+        gameOver = true;
+        document.getElementById('resetBtn').style.display = "inline-block";
+      } else {
+        // Switch player
+        currentPlayer = (currentPlayer === 'x') ? 'o' : 'x';
+        updateStatus("Current Turn: " + currentPlayer.toUpperCase());
+      }
+    }
+
+    // =====================================================
+    // Check for a win (three consecutive marks)
+    // =====================================================
+    function checkWinner() {
+      // Check rows
+      for (let r = 0; r < rows; r++) {
+        if (board[r][0] && board[r][0] === board[r][1] && board[r][1] === board[r][2]) {
+          return board[r][0];
+        }
+      }
+      // Check columns
+      for (let c = 0; c < cols; c++) {
+        if (board[0][c] && board[0][c] === board[1][c] && board[1][c] === board[2][c]) {
+          return board[0][c];
+        }
+      }
+      // Check diagonal (top-left to bottom-right)
+      if (board[0][0] && board[0][0] === board[1][1] && board[1][1] === board[2][2]) {
+        return board[0][0];
+      }
+      // Check diagonal (top-right to bottom-left)
+      if (board[0][2] && board[0][2] === board[1][1] && board[1][1] === board[2][0]) {
+        return board[0][2];
+      }
+      return null;
+    }
+
+    // =====================================================
+    // Check if the board is completely full (draw)
+    // =====================================================
+    function isBoardFull() {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (!board[r][c]) return false;
+        }
+      }
+      return true;
+    }
+
+    // =====================================================
+    // Update the status message displayed to the user
+    // =====================================================
+    function updateStatus(message) {
+      document.getElementById('status').textContent = message;
+    }
+
+    // =====================================================
+    // Reset the game state and update the UI
+    // =====================================================
+    function resetGame() {
+      initBoard();
+      currentPlayer = 'x';
+      gameOver = false;
+      updateStatus("Current Turn: X");
+      renderBoard();
+      document.getElementById('resetBtn').style.display = "none";
+    }
+
+    // =====================================================
+    // Attach event listener to the reset button
+    // =====================================================
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+    // =====================================================
+    // Initialize the game on page load
+    // =====================================================
+    resetGame();
+  </script>
+</body>
+</html>
