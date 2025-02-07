@@ -1,0 +1,54 @@
+{
+    "items": [
+      {
+        "id": 1,
+        "name": "Milk",
+        "price": 3.5
+      },
+      {
+        "id": 2,
+        "name": "Bread",
+        "price": 2
+      },
+      {
+        "id": 3,
+        "name": "Eggs",
+        "price": 4.25
+      },
+      {
+        "id": 4,
+        "name": "Apples",
+        "price": 1.2
+      },
+      {
+        "id": 5,
+        "name": "Chicken Breast",
+        "price": 7.99
+      },
+      {
+        "id": 6,
+        "name": "Rice",
+        "price": 2.75
+      },
+      {
+        "id": 7,
+        "name": "Pasta",
+        "price": 3.1
+      },
+      {
+        "id": 8,
+        "name": "Cheese",
+        "price": 5.5
+      },
+      {
+        "id": 9,
+        "name": "Carrots",
+        "price": 1
+      },
+      {
+        "id": 10,
+        "name": "Orange Juice",
+        "price": 4.75
+      }
+    ]
+  }
