@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Currency Converter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* -----------------------------------------------------
+       CSS Variables & iOS-like system fonts and colors
+    ----------------------------------------------------- */
+    :root {
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --accent-color: #007AFF;
+      --background-color: #EFEFF4;
+      --card-bg: #FFFFFF;
+      --border-color: #C6C6C8;
+      --text-color: #000;
+      --subtext-color: #6D6D72;
+    }
+    
+    /* -----------------------------------------------------
+       Reset & Full-Viewport Setup
+    ----------------------------------------------------- */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: var(--font-system);
+    }
+    
+    /* Surrounding padding so the "screen" doesn’t touch the edges */
+    .wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background-color: var(--background-color);
+      padding: 16px;
+    }
+    
+    /* -----------------------------------------------------
+       Screen Container
+       Using an 8:16 aspect ratio (width:height)
+    ----------------------------------------------------- */
+    .screen {
+      width: 100%;
+      max-width: calc(100vh * (8 / 16));
+      aspect-ratio: 8 / 16;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 40px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+    
+    /* -----------------------------------------------------
+       App Container (fills the screen)
+    ----------------------------------------------------- */
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* -----------------------------------------------------
+       Header (iOS Navigation Bar Style)
+    ----------------------------------------------------- */
+    header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: center;
+      background-color: var(--card-bg);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+    
+    /* -----------------------------------------------------
+       Main Content
+    ----------------------------------------------------- */
+    main {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .field-group {
+      margin-bottom: 16px;
+    }
+    .field-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: var(--subtext-color);
+    }
+    .field-group input[type="number"],
+    .field-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 16px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-color: #fff;
+      box-sizing: border-box;
+    }
+    
+    .result {
+      margin-top: 24px;
+      text-align: center;
+    }
+    .result p {
+      font-size: 28px;
+      font-weight: 500;
+      margin: 0;
+      color: var(--text-color);
+    }
+    .result span {
+      font-size: 16px;
+      color: var(--subtext-color);
+    }
+    
+    /* -----------------------------------------------------
+       Footer (iOS Style)
+    ----------------------------------------------------- */
+    footer {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--subtext-color);
+    }
+    footer a {
+      color: var(--subtext-color);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="screen">
+      <div class="container">
+        <!-- Navigation Bar -->
+        <header>
+          <h1>Currency Converter</h1>
+        </header>
+        <!-- Main Content -->
+        <main>
+          <div class="field-group">
+            <label for="baseCurrency">From:</label>
+            <select id="baseCurrency"></select>
+          </div>
+          <div class="field-group">
+            <label for="targetCurrency">To:</label>
+            <select id="targetCurrency"></select>
+          </div>
+          <div class="field-group">
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" placeholder="Enter amount" value="1" step="any">
+          </div>
+          <div class="result">
+            <p id="convertedAmount">--</p>
+            <span id="conversionDetails"></span>
+          </div>
+        </main>
+        <!-- Footer -->
+        <footer>
+          <p>
+            Demo App for a Coding Challenge on 
+            <a href="https://breakpoint.ghost.io" target="_blank">Breakpoint</a>.
+          </p>
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // --- Mock Exchange Rates API Data ---
+    const mockData = {
+      "base": {
+        "id": "USD",
+        "rate": 1.0,
+        "name": "US Dollar"
+      },
+      "rates": [
+        {
+          "id": "EUR",
+          "rate": 0.85,
+          "name": "Euro"
+        },
+        {
+          "id": "GBP",
+          "rate": 0.75,
+          "name": "British Pound"
+        },
+        {
+          "id": "JPY",
+          "rate": 110.25,
+          "name": "Japanese Yen"
+        },
+        {
+          "id": "CNY",
+          "rate": 7.2337,
+          "name": "Chinese Yuan"
+        },
+        {
+          "id": "BTC",
+          "rate": 0.0000142,
+          "name": "Bitcoin"
+        }
+      ]
+    };
+    
+    // --- Simulate API Call ---
+    function fetchExchangeRates() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(mockData);
+        }, 500); // Simulate network latency
+      });
+    }
+    
+    // --- Global Variables ---
+    let currencies = [];
+    
+    // --- Populate Dropdowns ---
+    function populateDropdowns(data) {
+      // Include the base currency and all rates
+      currencies = [data.base, ...data.rates];
+      const baseSelect = document.getElementById("baseCurrency");
+      const targetSelect = document.getElementById("targetCurrency");
+      baseSelect.innerHTML = "";
+      targetSelect.innerHTML = "";
+    
+      currencies.forEach(currency => {
+        const option = document.createElement("option");
+        option.value = currency.id;
+        option.textContent = `${currency.name} (${currency.id})`;
+        // Append a clone so both dropdowns have the same options.
+        baseSelect.appendChild(option.cloneNode(true));
+        targetSelect.appendChild(option);
+      });
+      // Set default selections
+      baseSelect.value = "USD";
+      targetSelect.value = "EUR";
+    }
+    
+    // --- Convert Currency ---
+    function convertCurrency() {
+      const baseSelect = document.getElementById("baseCurrency");
+      const targetSelect = document.getElementById("targetCurrency");
+      const amountInput = document.getElementById("amount");
+      const convertedDisplay = document.getElementById("convertedAmount");
+      const detailsDisplay = document.getElementById("conversionDetails");
+    
+      const amount = parseFloat(amountInput.value);
+      if (isNaN(amount)) {
+        convertedDisplay.textContent = "--";
+        detailsDisplay.textContent = "";
+        return;
+      }
+    
+      const baseCurrency = currencies.find(c => c.id === baseSelect.value);
+      const targetCurrency = currencies.find(c => c.id === targetSelect.value);
+    
+      if (!baseCurrency || !targetCurrency) {
+        convertedDisplay.textContent = "--";
+        detailsDisplay.textContent = "";
+        return;
+      }
+    
+      // Conversion formula: amount * (target.rate / base.rate)
+      const converted = amount * (targetCurrency.rate / baseCurrency.rate);
+      let formattedConverted = converted;
+    
+      // Use appropriate number formatting (more decimals for BTC, no decimals for JPY)
+      if (targetCurrency.id === "BTC") {
+        formattedConverted = converted.toFixed(8);
+      } else if (targetCurrency.id === "JPY") {
+        formattedConverted = converted.toFixed(0);
+      } else {
+        formattedConverted = converted.toFixed(2);
+      }
+    
+      convertedDisplay.textContent = formattedConverted;
+      detailsDisplay.textContent = `${amount} ${baseCurrency.id} = ${formattedConverted} ${targetCurrency.id}`;
+    }
+    
+    // --- Attach Event Listeners ---
+    function attachListeners() {
+      document.getElementById("baseCurrency").addEventListener("change", convertCurrency);
+      document.getElementById("targetCurrency").addEventListener("change", convertCurrency);
+      document.getElementById("amount").addEventListener("input", convertCurrency);
+    }
+    
+    // --- Initialization ---
+    fetchExchangeRates().then(data => {
+      populateDropdowns(data);
+      attachListeners();
+      convertCurrency(); // initial conversion
+    });
+  </script>
+</body>
+</html>
