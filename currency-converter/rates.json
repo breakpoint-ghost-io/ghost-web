@@ -1,0 +1,34 @@
+{
+  "base": {
+    "id": "USD",
+    "rate": 1.0,
+    "name": "US Dollar"
+  },
+  "rates": [
+    {
+      "id": "EUR",
+      "rate": 0.85,
+      "name": "Euro"
+    },
+    {
+      "id": "GBP",
+      "rate": 0.75,
+      "name": "British Pound"
+    },
+    {
+      "id": "JPY",
+      "rate": 110.25,
+      "name": "Japanese Yen"
+    },
+    {
+      "id": "CNY",
+      "rate": 7.2337,
+      "name": "Chinese Yuan"
+    },
+    {
+      "id": "BTC",
+      "rate": 0.0000142,
+      "name": "Bitcoin"
+    }
+  ]
+}
