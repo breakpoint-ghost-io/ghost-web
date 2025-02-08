@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Blur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* -----------------------------------------------------
+       CSS Variables & Global Styles
+    ----------------------------------------------------- */
+    :root {
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --accent-color: #007AFF;
+      --background-color: #EFEFF4;
+      --card-bg: #FFFFFF;
+      --border-color: #D1D7DD;
+      --text-color: #333;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 1.25rem;
+      font-family: var(--font-system);
+      background-color: var(--background-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    /* -----------------------------------------------------
+       Phone Container (Portrait Mode: 8:16 Aspect Ratio)
+       This container will initially aspect-fit the browser window.
+    ----------------------------------------------------- */
+    .wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    
+    .screen {
+      width: 100%;
+      max-width: calc(100vh * (8 / 16));
+      aspect-ratio: 8 / 16;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px; /* ~12pt */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    /* -----------------------------------------------------
+       Header
+    ----------------------------------------------------- */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    /* -----------------------------------------------------
+       Main Content: Vertically Stacked Canvases & Slider at Bottom
+    ----------------------------------------------------- */
+    .main-content {
+      flex: 1;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      align-items: center;
+    }
+    
+    /* Canvas container now stacks canvases vertically */
+    .canvas-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+      width: 100%;
+    }
+    
+    canvas {
+      background-color: #000;
+      border: 1px solid var(--border-color);
+      max-width: 90%;
+      height: auto;
+    }
+    
+    /* Slider container positioned at the bottom of main-content */
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 90%;
+      margin-top: auto;
+    }
+    .slider-container label {
+      font-size: 1rem;
+    }
+    .slider-container input[type="range"] {
+      flex: 1;
+    }
+    
+    /* -----------------------------------------------------
+       Footer (Attribution)
+    ----------------------------------------------------- */
+    footer {
+      padding: 0.5rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: 0.875rem;
+      background-color: var(--card-bg);
+      width: 100%;
+    }
+    
+    footer a {
+      color: var(--accent-color);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="screen">
+      <div class="container">
+        <!-- Header -->
+        <div class="header">
+          <h1>Image Blur</h1>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+          <div class="canvas-container">
+            <canvas id="originalCanvas"></canvas>
+            <canvas id="blurredCanvas"></canvas>
+          </div>
+          <div class="slider-container">
+            <label for="blurRadius">Blur Radius:</label>
+            <input type="range" id="blurRadius" min="1" max="5" value="1" step="1">
+            <span id="radiusDisplay">1</span>
+          </div>
+        </div>
+        <!-- Footer -->
+        <footer>
+          <p>Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io" target="_blank">Breakpoint</a>.</p>
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    /**********************************
+     * GLOBAL VARIABLES AND SETUP
+     **********************************/
+    const originalCanvas = document.getElementById("originalCanvas");
+    const blurredCanvas = document.getElementById("blurredCanvas");
+    const radiusSlider = document.getElementById("blurRadius");
+    const radiusDisplay = document.getElementById("radiusDisplay");
+    
+    const originalCtx = originalCanvas.getContext("2d");
+    const blurredCtx = blurredCanvas.getContext("2d");
+    
+    // Use the new image URL (JPG version)
+    const imageUrl = "https://breakpoint-ghost-io.github.io/ghost-web/image-filter/car.jpg";
+    let img = new Image();
+    img.crossOrigin = "Anonymous";
+    
+    img.onload = function() {
+      // Set canvases size to match image dimensions
+      originalCanvas.width = img.width;
+      originalCanvas.height = img.height;
+      blurredCanvas.width = img.width;
+      blurredCanvas.height = img.height;
+      
+      // Draw the original image on the original canvas
+      originalCtx.drawImage(img, 0, 0);
+      
+      // Initially process blur with the default radius from the slider
+      processBlur(parseInt(radiusSlider.value));
+    };
+    
+    img.src = imageUrl;
+    
+    /**********************************
+     * BLUR PROCESSING & WORKER SETUP
+     **********************************/
+    const workerCode = `
+      self.onmessage = function(e) {
+        const { imageData, width, height, radius } = e.data;
+        const input = imageData.data;
+        const output = new Uint8ClampedArray(input);
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            let rSum = 0, gSum = 0, bSum = 0, count = 0;
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const ny = y + dy;
+                const nx = x + dx;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                  const index = (ny * width + nx) * 4;
+                  rSum += input[index];
+                  gSum += input[index + 1];
+                  bSum += input[index + 2];
+                  count++;
+                }
+              }
+            }
+            const i = (y * width + x) * 4;
+            output[i] = Math.floor(rSum / count);
+            output[i + 1] = Math.floor(gSum / count);
+            output[i + 2] = Math.floor(bSum / count);
+            output[i + 3] = input[i + 3];
+          }
+        }
+        self.postMessage({ output, width, height });
+      };
+    `;
+    
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    
+    worker.onmessage = function(e) {
+      const { output, width, height } = e.data;
+      const newImageData = new ImageData(new Uint8ClampedArray(output), width, height);
+      blurredCtx.putImageData(newImageData, 0, 0);
+    };
+    
+    function processBlur(radius) {
+      const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+      worker.postMessage({ imageData, width: originalCanvas.width, height: originalCanvas.height, radius });
+    }
+    
+    /**********************************
+     * DYNAMIC BLUR: SLIDER HANDLER
+     **********************************/
+    radiusSlider.addEventListener("input", function() {
+      const radius = parseInt(this.value);
+      radiusDisplay.textContent = radius;
+      processBlur(radius);
+    });
+  </script>
+</body>
+</html>
