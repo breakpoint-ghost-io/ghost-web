@@ -1,0 +1,65 @@
+{
+    "bills": [
+      {
+        "id": 1,
+        "owner_id": 101,
+        "amount": 1500,
+        "name": "Rent",
+        "description": "Monthly apartment rent"
+      },
+      {
+        "id": 2,
+        "owner_id": 102,
+        "amount": 75.5,
+        "name": "Dinner"
+      },
+      {
+        "id": 3,
+        "owner_id": 103,
+        "amount": 300,
+        "name": "Groceries",
+        "description": "Weekly grocery shopping"
+      },
+      {
+        "id": 4,
+        "owner_id": 104,
+        "amount": 100,
+        "name": "Internet Bill",
+        "description": "Monthly internet service payment"
+      },
+      {
+        "id": 5,
+        "owner_id": 101,
+        "amount": 200,
+        "name": "Electricity"
+      },
+      {
+        "id": 6,
+        "owner_id": 102,
+        "amount": 50,
+        "name": "Streaming Service",
+        "description": "Subscription for video streaming service"
+      }
+    ],
+    "participants": [
+      {
+        "id": 101,
+        "name": "Alice",
+        "photo_url": "https://randomuser.me/api/portraits/women/3.jpg"
+      },
+      {
+        "id": 102,
+        "name": "Bob",
+        "photo_url": "https://randomuser.me/api/portraits/men/7.jpg"
+      },
+      {
+        "id": 103,
+        "name": "Charlie",
+        "photo_url": "https://randomuser.me/api/portraits/men/2.jpg"
+      },
+      {
+        "id": 104,
+        "name": "Diana"
+      }
+    ]
+}
