@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bill Splitter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* -----------------------------------------------------
+       CSS Variables & Global Styles (iOS‑inspired)
+    ----------------------------------------------------- */
+    :root {
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --accent-color: #007AFF;
+      --background-color: #F2F2F7; /* iOS-like background */
+      --card-bg: #FFFFFF;
+      --border-color: #C6C6C8;    /* subtle iOS-like border color */
+      --text-color: #333;
+      --header-font-size: 1.2rem; /* ~19px */
+      --body-font-size: 1rem;     /* ~16px */
+      --small-font-size: 0.875rem;/* ~14px */
+      --transition-speed: 0.3s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-system);
+      background-color: var(--background-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 0.75rem;
+    }
+
+    /* -----------------------------------------------------
+       Phone Container (Portrait, 8:16 Aspect Ratio, Aspect-Fit)
+    ----------------------------------------------------- */
+    .wrapper {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      padding: 0.75rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .screen {
+      width: 100%;
+      height: 90vh;
+      max-width: calc(90vh * (8 / 16));
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Full-width divider (iOS-like) */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background-color: var(--border-color);
+    }
+
+    /* -----------------------------------------------------
+       Home Screen
+    ----------------------------------------------------- */
+    #homeScreen {
+      flex: 1; 
+      display: block;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .header-home {
+      background-color: var(--card-bg);
+      text-align: center;
+      padding: 0.75rem 0;
+    }
+    .header-home h1 {
+      margin: 0;
+      font-size: var(--header-font-size);
+      font-weight: 600;
+    }
+    .header-home + .divider {
+      margin-bottom: 1rem;
+    }
+
+    .home-content {
+      padding: 0 1rem 1rem;
+    }
+
+    .bills-section {
+      max-width: 320px;
+      margin: 1rem auto 0;
+    }
+    .bill-item {
+      background-color: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .bill-item:hover {
+      background-color: #fafafa;
+    }
+    .bill-item h2 {
+      font-size: var(--body-font-size);
+      margin-bottom: 0.25rem;
+    }
+    .bill-item p {
+      margin: 0;
+      font-size: var(--small-font-size);
+      color: #666;
+    }
+
+    .summary-section {
+      max-width: 320px;
+      margin: 1.5rem auto 0;
+    }
+    .summary-section h2 {
+      font-size: var(--body-font-size);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .summary-item {
+      font-size: var(--small-font-size);
+      margin-bottom: 0.25rem;
+    }
+
+    /* -----------------------------------------------------
+       Detail Screen
+    ----------------------------------------------------- */
+    #expenseScreen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      overflow-y: auto;
+    }
+
+    .nav-bar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      background-color: var(--card-bg);
+      height: 44px;
+      padding: 0 1rem;
+    }
+    .nav-bar h1 {
+      text-align: center;
+      font-size: var(--header-font-size);
+      font-weight: 600;
+    }
+    .nav-bar button {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: color var(--transition-speed) ease;
+    }
+    .nav-bar button:hover {
+      color: darkblue;
+    }
+    .nav-bar + .divider {
+      margin-bottom: 1rem;
+    }
+
+    .detail-content {
+      flex: 1;
+      padding: 0 1rem 1rem;
+      width: 100%;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: 30% 1fr;
+      align-items: center;
+      padding-bottom: 0.75rem; /* Increased vertical space */
+      margin-bottom: 0.75rem;  /* More spacing between items */
+      border-bottom: 1px solid var(--border-color);
+    }
+    .detail-label {
+      font-weight: 600;
+      font-size: var(--body-font-size);
+      color: #555;
+    }
+    .detail-value {
+      text-align: right;
+      font-size: var(--body-font-size);
+      color: #333;
+    }
+
+    #descriptionGroup {
+      display: none; 
+      margin-bottom: 1.2rem;
+    }
+    #descriptionGroup label {
+      font-weight: 600;
+      font-size: var(--body-font-size);
+      color: #555;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+    .description-value {
+      font-size: var(--body-font-size);
+      color: #333;
+      line-height: 1.3;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.6rem; /* Slightly bigger spacing */
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1.5rem; /* Extra space above toggles */
+    }
+    .form-group label {
+      font-weight: 600;
+      font-size: var(--body-font-size);
+      color: #555;
+      margin-bottom: 0.25rem;
+    }
+    .toggle-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      font-size: var(--body-font-size);
+      background-color: #f9f9f9;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .toggle-item img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .toggle-item.selected {
+      background-color: var(--accent-color);
+      color: #fff;
+    }
+
+    #saveExpenseBtn {
+      font-size: 0.85rem;
+      padding: 0.2rem 0.5rem;
+      justify-self: end;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 0.5rem 1rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: var(--small-font-size);
+      background-color: var(--card-bg);
+      width: 100%;
+    }
+    footer a {
+      color: var(--accent-color);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="screen">
+      
+      <!-- HOME SCREEN -->
+      <div id="homeScreen" style="flex:1; display:block;">
+        <div class="header-home">
+          <h1>Bill Splitter</h1>
+        </div>
+        <div class="divider"></div>
+        
+        <div class="home-content">
+          <div class="bills-section" id="billsSection"></div>
+          <div class="summary-section" id="summarySection">
+            <h2>Summary</h2>
+            <div id="summaryList"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- DETAIL SCREEN -->
+      <div id="expenseScreen" style="display:none; flex:1; flex-direction:column;">
+        <div class="nav-bar">
+          <button id="backBtn" title="Back">←</button>
+          <h1 id="expenseScreenTitle">Bill Split</h1>
+          <button id="saveExpenseBtn" title="Save">Save</button>
+        </div>
+        <div class="divider"></div>
+        
+        <div class="detail-content">
+          <div class="detail-row">
+            <div class="detail-label">Bill Name</div>
+            <div id="expenseNameDisplay" class="detail-value"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Amount</div>
+            <div id="expenseAmountDisplay" class="detail-value"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Owner</div>
+            <div id="expenseOwnerDisplay" class="detail-value"></div>
+          </div>
+          
+          <div id="descriptionGroup">
+            <label>Description</label>
+            <div id="expenseDescriptionDisplay" class="description-value"></div>
+          </div>
+          
+          <div class="form-group">
+            <label>Split with</label>
+            <div class="toggle-list" id="splitWithList"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- FOOTER -->
+      <footer>
+        <p>Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io" target="_blank">Breakpoint</a>.</p>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    /***********************************
+     * MOCK API DATA + GLOBAL STATE
+     ***********************************/
+    const apiData = {
+      "bills": [
+        { "id": 1, "owner_id": 101, "amount": 1200, "name": "Rent" },
+        { "id": 2, "owner_id": 102, "amount": 300, "name": "Groceries", "description": "Shared grocery expenses" },
+        { "id": 3, "owner_id": 103, "amount": 100, "name": "Dinner", "description": "Dinner at Italian restaurant" }
+      ],
+      "participants": [
+        { "id": 101, "name": "Alice", "photo_url": "https://randomuser.me/api/portraits/women/3.jpg" },
+        { "id": 102, "name": "Bob", "photo_url": "https://randomuser.me/api/portraits/men/7.jpg" },
+        { "id": 103, "name": "Charlie", "photo_url": "https://randomuser.me/api/portraits/men/10.jpg" }
+      ]
+    };
+
+    let expenses = [];
+    apiData.bills.forEach(bill => {
+      bill.shared_with = [];
+      expenses.push(bill);
+    });
+    const participants = apiData.participants;
+
+    let currentExpenseId = null;
+
+    function showHomeScreen() {
+      document.getElementById("homeScreen").style.display = "block";
+      document.getElementById("expenseScreen").style.display = "none";
+      renderBills();
+      renderSummary();
+    }
+    
+    function showExpenseScreen(expenseId) {
+      currentExpenseId = expenseId;
+      document.getElementById("homeScreen").style.display = "none";
+      document.getElementById("expenseScreen").style.display = "flex";
+      
+      const exp = expenses.find(e => e.id === expenseId);
+      if (!exp) return;
+      document.getElementById("expenseNameDisplay").textContent = exp.name;
+      document.getElementById("expenseAmountDisplay").textContent = "$" + parseFloat(exp.amount).toFixed(2);
+      const owner = participants.find(p => p.id === exp.owner_id);
+      document.getElementById("expenseOwnerDisplay").textContent = owner ? owner.name : "Unknown";
+      
+      if (exp.description && exp.description.trim() !== "") {
+        document.getElementById("expenseDescriptionDisplay").textContent = exp.description;
+        document.getElementById("descriptionGroup").style.display = "block";
+      } else {
+        document.getElementById("descriptionGroup").style.display = "none";
+      }
+      
+      renderSplitToggles(exp);
+    }
+
+    /***********************************
+     * HOME SCREEN RENDER
+     ***********************************/
+    function renderBills() {
+      const billsSection = document.getElementById("billsSection");
+      billsSection.innerHTML = "";
+      if (expenses.length === 0) {
+        billsSection.innerHTML = "<p>No bills available.</p>";
+        return;
+      }
+      expenses.forEach(exp => {
+        const owner = participants.find(p => p.id === exp.owner_id);
+        const billDiv = document.createElement("div");
+        billDiv.className = "bill-item";
+        billDiv.innerHTML = `
+          <h2>${exp.name}</h2>
+          <p>$${parseFloat(exp.amount).toFixed(2)} – Paid by ${owner ? owner.name : "Unknown"}</p>
+        `;
+        billDiv.addEventListener("click", () => showExpenseScreen(exp.id));
+        billsSection.appendChild(billDiv);
+      });
+    }
+    function renderSummary() {
+      let balances = {};
+      participants.forEach(p => {
+        balances[p.id] = {};
+        participants.forEach(q => {
+          if (p.id !== q.id) {
+            balances[p.id][q.id] = 0;
+          }
+        });
+      });
+      // For each expense that is split => share = amount / (1 + shared_with.length)
+      expenses.forEach(exp => {
+        if (exp.shared_with.length > 0) {
+          const share = parseFloat(exp.amount) / (1 + exp.shared_with.length);
+          exp.shared_with.forEach(pid => {
+            if (pid !== exp.owner_id) {
+              balances[pid][exp.owner_id] += share;
+            }
+          });
+        }
+      });
+      // Net out mutual debts
+      let summaryLines = [];
+      for (let i = 0; i < participants.length; i++) {
+        for (let j = i + 1; j < participants.length; j++) {
+          const pid = participants[i].id;
+          const qid = participants[j].id;
+          const net = balances[pid][qid] - balances[qid][pid];
+          if (net > 0.01) {
+            summaryLines.push(`${participants[i].name} owes ${participants[j].name} $${net.toFixed(2)}`);
+          } else if (net < -0.01) {
+            summaryLines.push(`${participants[j].name} owes ${participants[i].name} $${Math.abs(net).toFixed(2)}`);
+          }
+        }
+      }
+      const summaryList = document.getElementById("summaryList");
+      summaryList.innerHTML = "";
+      if (summaryLines.length === 0) {
+        summaryList.innerHTML = "<p>No outstanding balances</p>";
+      } else {
+        summaryLines.forEach(line => {
+          const p = document.createElement("p");
+          p.className = "summary-item";
+          p.textContent = line;
+          summaryList.appendChild(p);
+        });
+      }
+    }
+
+    /***********************************
+     * DETAIL SCREEN: Split with Toggles
+     ***********************************/
+    function renderSplitToggles(expense) {
+      const toggleList = document.getElementById("splitWithList");
+      toggleList.innerHTML = "";
+      participants.forEach(p => {
+        if (p.id === expense.owner_id) return;
+        const btn = document.createElement("div");
+        btn.className = "toggle-item";
+        btn.id = "toggle-" + p.id;
+        
+        const img = document.createElement("img");
+        img.src = p.photo_url || "https://via.placeholder.com/24";
+        img.alt = p.name;
+        const span = document.createElement("span");
+        span.textContent = p.name;
+        
+        btn.appendChild(img);
+        btn.appendChild(span);
+        
+        if (expense.shared_with.includes(p.id)) {
+          btn.classList.add("selected");
+        }
+        btn.addEventListener("click", () => {
+          btn.classList.toggle("selected");
+        });
+        toggleList.appendChild(btn);
+      });
+    }
+
+    /***********************************
+     * EVENT HANDLERS
+     ***********************************/
+    document.getElementById("backBtn").addEventListener("click", () => {
+      showHomeScreen();
+    });
+    document.getElementById("saveExpenseBtn").addEventListener("click", () => {
+      const exp = expenses.find(e => e.id === currentExpenseId);
+      if (!exp) return;
+      let newSharedWith = [];
+      participants.forEach(p => {
+        if (p.id === exp.owner_id) return;
+        const btn = document.getElementById("toggle-" + p.id);
+        if (btn && btn.classList.contains("selected")) {
+          newSharedWith.push(p.id);
+        }
+      });
+      exp.shared_with = newSharedWith;
+      showHomeScreen();
+    });
+
+    /***********************************
+     * APP INIT
+     ***********************************/
+    function showHomeScreen() {
+      document.getElementById("homeScreen").style.display = "block";
+      document.getElementById("expenseScreen").style.display = "none";
+      renderBills();
+      renderSummary();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      showHomeScreen();
+    });
+  </script>
+</body>
+</html>
