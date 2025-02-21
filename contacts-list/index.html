@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iOS Demo Contact List</title>
+  <style>
+    /* iOS-like container styling */
+    body {
+      background: #f0f0f5;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 100%;
+      max-width: 375px;
+      height: 100vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 10px;
+    }
+    /* Header / Controls */
+    .header {
+      padding: 10px 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .sorting-toggle {
+      margin-top: 10px;
+      display: flex;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+    }
+    .toggle-btn.active {
+      background: #007aff;
+      color: #fff;
+    }
+    /* Contact list container */
+    .list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 15px;
+    }
+    .group {
+      margin-bottom: 15px;
+    }
+    .group-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #007aff; /* Distinct color for section title */
+    }
+    .contact {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .contact-name {
+      font-size: 15px;
+      margin-bottom: 3px;
+    }
+    .contact-phone {
+      font-size: 13px;
+      color: #555;
+      padding-right: 5px; /* Padding so phone number isn’t flush against the edge */
+    }
+    .highlight {
+      background: yellow;
+      font-weight: bold;
+    }
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+    }
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 8px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+    }
+    .footer a {
+      color: #007aff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">
+      <input type="text" id="searchInput" class="search-bar" placeholder="Search by phone number" />
+      <div class="sorting-toggle">
+        <div id="sortLast" class="toggle-btn active">Last Name</div>
+        <div id="sortFirst" class="toggle-btn">First Name</div>
+      </div>
+    </div>
+    <div id="listContainer" class="list-container"></div>
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+  </div>
+  <script>
+    // Expanded sample contacts data (18 entries) with several sharing initials for better grouping.
+    const contacts = [
+      { "firstName": "Jane", "lastName": "Doe", "phoneNumber": "123456789" },
+      { "firstName": "John", "lastName": "Smith", "phoneNumber": "987654321" },
+      { "firstName": "Alice", "lastName": "Adams", "phoneNumber": "5551234567" },
+      { "firstName": "Bob", "lastName": "Brown", "phoneNumber": "5559876543" },
+      { "firstName": "Charlie", "lastName": "Davis", "phoneNumber": "1112223333" },
+      { "firstName": "Eve", "lastName": "Evans", "phoneNumber": "2223334444" },
+      { "firstName": "Fay", "lastName": "Frost", "phoneNumber": "3334445555" },
+      { "firstName": "Grace", "lastName": "Green", "phoneNumber": "4445556666" },
+      { "firstName": "Hank", "lastName": "Hill", "phoneNumber": "7778889999" },
+      { "firstName": "Ivy", "lastName": "Irons", "phoneNumber": "8889990000" },
+      { "firstName": "Amanda", "lastName": "Anderson", "phoneNumber": "9998887777" },
+      { "firstName": "Aaron", "lastName": "Avery", "phoneNumber": "1010101010" },
+      { "firstName": "Bella", "lastName": "Baker", "phoneNumber": "2020202020" },
+      { "firstName": "Brian", "lastName": "Brooks", "phoneNumber": "3030303030" },
+      { "firstName": "Cathy", "lastName": "Carter", "phoneNumber": "4040404040" },
+      { "firstName": "Derek", "lastName": "Dunn", "phoneNumber": "5050505050" },
+      { "firstName": "Fiona", "lastName": "Fletcher", "phoneNumber": "6060606060" },
+      { "firstName": "George", "lastName": "Gibson", "phoneNumber": "7070707070" }
+    ];
+
+    let sortBy = 'last'; // default sort by last name
+    let searchTerm = '';
+
+    const searchInput = document.getElementById('searchInput');
+    const sortLastBtn = document.getElementById('sortLast');
+    const sortFirstBtn = document.getElementById('sortFirst');
+    const listContainer = document.getElementById('listContainer');
+
+    // Sorting toggle event listeners
+    sortLastBtn.addEventListener('click', () => {
+      sortBy = 'last';
+      sortLastBtn.classList.add('active');
+      sortFirstBtn.classList.remove('active');
+      renderList();
+    });
+    sortFirstBtn.addEventListener('click', () => {
+      sortBy = 'first';
+      sortFirstBtn.classList.add('active');
+      sortLastBtn.classList.remove('active');
+      renderList();
+    });
+    // Search event listener
+    searchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value;
+      renderList();
+    });
+
+    // Highlights matching digits in the phone number.
+    function highlightMatch(phone, term) {
+      if (!term) return phone;
+      const escapedTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(escapedTerm, 'g');
+      return phone.replace(regex, match => `<span class="highlight">${match}</span>`);
+    }
+
+    function renderList() {
+      // Filter contacts by phone number containing the search term
+      const filteredContacts = contacts.filter(contact =>
+        contact.phoneNumber.includes(searchTerm)
+      );
+
+      // Choose key and format based on sort preference
+      let key, formatName;
+      if (sortBy === 'last') {
+        key = 'lastName';
+        formatName = (contact) => `<strong>${contact.lastName}</strong>, ${contact.firstName}`;
+      } else {
+        key = 'firstName';
+        formatName = (contact) => `<strong>${contact.firstName}</strong>, ${contact.lastName}`;
+      }
+      
+      // Sort contacts alphabetically by the chosen key (case-insensitive)
+      filteredContacts.sort((a, b) =>
+        a[key].localeCompare(b[key], undefined, { sensitivity: 'base' })
+      );
+      
+      // Group contacts by the first letter of the chosen key (case-insensitive)
+      const groups = {};
+      filteredContacts.forEach(contact => {
+        const groupKey = contact[key][0].toUpperCase();
+        if (!groups[groupKey]) {
+          groups[groupKey] = [];
+        }
+        groups[groupKey].push(contact);
+      });
+      
+      // Clear previous content
+      listContainer.innerHTML = '';
+      
+      // If no contacts match, show empty state.
+      if (filteredContacts.length === 0) {
+        listContainer.innerHTML = `<div class="empty-state">No contacts found</div>`;
+        return;
+      }
+      
+      // Render grouped contacts in alphabetical order of group key
+      Object.keys(groups).sort().forEach(groupKey => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'group';
+        
+        // Group header
+        const header = document.createElement('div');
+        header.className = 'group-header';
+        header.textContent = groupKey;
+        groupDiv.appendChild(header);
+        
+        // Render each contact in the group
+        groups[groupKey].forEach(contact => {
+          const contactDiv = document.createElement('div');
+          contactDiv.className = 'contact';
+          
+          // Contact name in the correct format
+          const nameDiv = document.createElement('div');
+          nameDiv.className = 'contact-name';
+          nameDiv.innerHTML = formatName(contact);
+          
+          // Phone number with matching digits highlighted
+          const phoneDiv = document.createElement('div');
+          phoneDiv.className = 'contact-phone';
+          phoneDiv.innerHTML = highlightMatch(contact.phoneNumber, searchTerm);
+          
+          contactDiv.appendChild(nameDiv);
+          contactDiv.appendChild(phoneDiv);
+          groupDiv.appendChild(contactDiv);
+        });
+        
+        listContainer.appendChild(groupDiv);
+      });
+    }
+    
+    // Initial render
+    renderList();
+  </script>
+</body>
+</html>
