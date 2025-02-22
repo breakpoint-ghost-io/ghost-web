@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iOS Demo Weather App</title>
+  <style>
+    body {
+      background: #f0f0f5;
+      margin: 0;
+      padding: 10px;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 100%;
+      max-width: 375px;
+      height: 100vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Header with search bar & cancel button */
+    .header {
+      padding: 10px 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+    .search-bar {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .cancel-btn {
+      margin-left: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: none;
+      background: transparent;
+      color: #007aff;
+      cursor: pointer;
+      display: none;
+    }
+    /* Dedicated search results view */
+    #searchResultsContainer {
+      display: none;
+      padding: 15px;
+      background: #fff;
+      flex: 1;
+    }
+    #searchResultsContainer h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #007aff;
+    }
+    .search-result {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .result-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .result-info span {
+      font-size: 13px;
+      color: #555;
+    }
+    .search-result button {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      background: #007aff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    /* Home view content container */
+    .content-container {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .section {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    .section h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #007aff;
+    }
+    /* Weather and favorite items */
+    .weather-item, .favorite-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .weather-details, .favorite-details {
+      display: flex;
+      flex-direction: column;
+    }
+    .weather-item strong, .favorite-item strong {
+      margin-bottom: 4px;
+      display: block;
+    }
+    .weather-emoji {
+      font-size: 24px;
+      margin-left: 10px;
+    }
+    /* Footer always at bottom */
+    .footer {
+      text-align: center;
+      padding: 8px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      margin-top: auto;
+    }
+    .footer a {
+      color: #007aff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">
+      <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search places..." />
+        <button id="cancelSearch" class="cancel-btn">Cancel</button>
+      </div>
+    </div>
+    <!-- Search Results View -->
+    <div id="searchResultsContainer">
+      <h3>Search Results</h3>
+      <div id="searchResults"></div>
+    </div>
+    <!-- Home View -->
+    <div class="content-container" id="homeView">
+      <div id="currentSection" class="section">
+        <h3>Your Location</h3>
+        <div id="currentWeather">Loading...</div>
+      </div>
+      <div id="favoritesSection" class="section">
+        <h3>Favorite Places</h3>
+        <div id="favorites"></div>
+      </div>
+    </div>
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+  </div>
+
+  <script>
+    // Map weather code to summary and emoji.
+    function getWeatherSummary(code) {
+      if (code === 0) return "Clear sky";
+      if (code >= 1 && code <= 3) return "Partly cloudy";
+      if (code === 45 || code === 48) return "Foggy";
+      if (code >= 51 && code <= 57) return "Drizzle";
+      if (code >= 61 && code <= 67) return "Rainy";
+      if (code >= 71 && code <= 77) return "Snowy";
+      if (code >= 80 && code <= 82) return "Rain showers";
+      if (code >= 85 && code <= 86) return "Snow showers";
+      if (code === 95) return "Thunderstorm";
+      if (code >= 96 && code <= 99) return "Thunderstorm with hail";
+      return "Unknown conditions";
+    }
+    function getWeatherEmoji(code) {
+      if (code === 0) return "☀️";
+      if (code >= 1 && code <= 3) return "⛅";
+      if (code === 45 || code === 48) return "🌫️";
+      if (code >= 51 && code <= 57) return "🌦️";
+      if (code >= 61 && code <= 67) return "🌧️";
+      if (code >= 71 && code <= 77) return "❄️";
+      if (code >= 80 && code <= 82) return "🌦️";
+      if (code >= 85 && code <= 86) return "❄️";
+      if (code === 95) return "⛈️";
+      if (code >= 96 && code <= 99) return "⛈️";
+      return "❓";
+    }
+
+    // API call to fetch forecast given lat and lon.
+    function fetchForecast(lat, lon) {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit`;
+      return fetch(url).then(res => res.json());
+    }
+
+    // Favorites persistence.
+    let favorites = [];
+    function loadFavorites() {
+      const stored = localStorage.getItem('favorites');
+      if (stored) {
+        favorites = JSON.parse(stored);
+      }
+    }
+    function saveFavorites() {
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    function updateFavorites() {
+      const favContainer = document.getElementById('favorites');
+      favContainer.innerHTML = "";
+      if (favorites.length === 0) {
+        favContainer.innerHTML = "<div>No favorite places added.</div>";
+        return;
+      }
+      favorites.forEach(fav => {
+        fetchForecast(fav.latitude, fav.longitude)
+          .then(data => {
+            const summary = getWeatherSummary(data.current.weather_code);
+            const emoji = getWeatherEmoji(data.current.weather_code);
+            favContainer.innerHTML += `
+              <div class="favorite-item">
+                <div class="favorite-details">
+                  <strong>${fav.name}</strong>
+                  <div>${data.current.temperature_2m}°F, ${summary}</div>
+                </div>
+                <div class="weather-emoji">${emoji}</div>
+              </div>
+            `;
+          })
+          .catch(err => {
+            favContainer.innerHTML += `
+              <div class="favorite-item">
+                <div class="favorite-details">
+                  <strong>${fav.name}</strong>
+                  <div>Error fetching weather</div>
+                </div>
+                <div class="weather-emoji">❓</div>
+              </div>
+            `;
+          });
+      });
+    }
+
+    // Helper: format location details for search result.
+    function formatLocation(place) {
+      let parts = [];
+      if (place.admin1) parts.push(place.admin1);
+      if (place.admin2) parts.push(place.admin2);
+      if (place.admin3) parts.push(place.admin3);
+      if (place.country) parts.push(place.country);
+      return parts.join(', ');
+    }
+
+    // Add a place to favorites and dismiss search.
+    function addFavorite(lat, lon, name, admin1, admin2, admin3, country) {
+      if (!favorites.some(f => f.latitude === lat && f.longitude === lon)) {
+        favorites.push({ latitude: lat, longitude: lon, name: name });
+        saveFavorites();
+        updateFavorites();
+      }
+      // Dismiss search: clear input, hide search results, show home view.
+      document.getElementById('searchInput').value = "";
+      toggleSearchView(false);
+    }
+    window.addFavorite = addFavorite;
+
+    // Search places using Open-Meteo's Geocoding API with max 5 results.
+    function searchPlaces(query) {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5`;
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const resultsContainer = document.getElementById('searchResults');
+          resultsContainer.innerHTML = "";
+          if (data.results && data.results.length > 0) {
+            data.results.forEach(place => {
+              const safeName = place.name.replace(/'/g, "\\'");
+              resultsContainer.innerHTML += `
+                <div class="search-result">
+                  <div class="result-info">
+                    <strong>${place.name}</strong>
+                    <span>${formatLocation(place)}</span>
+                  </div>
+                  <button onclick="addFavorite(${place.latitude}, ${place.longitude}, '${safeName}', '${place.admin1 || ''}', '${place.admin2 || ''}', '${place.admin3 || ''}', '${place.country || ''}')">Add</button>
+                </div>
+              `;
+            });
+          } else {
+            resultsContainer.innerHTML = "<div>No results found.</div>";
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    }
+
+    // Toggle between search view and home view.
+    function toggleSearchView(active) {
+      const searchResultsContainer = document.getElementById('searchResultsContainer');
+      const homeView = document.getElementById('homeView');
+      const cancelBtn = document.getElementById('cancelSearch');
+      if (active) {
+        searchResultsContainer.style.display = "block";
+        homeView.style.display = "none";
+        cancelBtn.style.display = "block";
+      } else {
+        searchResultsContainer.style.display = "none";
+        homeView.style.display = "block";
+        cancelBtn.style.display = "none";
+      }
+    }
+
+    // Debounce search input with 300ms delay.
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      const query = e.target.value.trim();
+      if (query.length < 3) {
+        toggleSearchView(false);
+        return;
+      }
+      searchTimeout = setTimeout(() => {
+        if(query.length >= 3){
+          toggleSearchView(true);
+          searchPlaces(query);
+        } else {
+          toggleSearchView(false);
+        }
+      }, 300);
+    });
+
+    // Cancel button to dismiss search.
+    document.getElementById('cancelSearch').addEventListener('click', () => {
+      document.getElementById('searchInput').value = "";
+      toggleSearchView(false);
+    });
+
+    // Fetch current location weather.
+    function loadCurrentLocationWeather() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetchForecast(lat, lon)
+              .then(data => {
+                const summary = getWeatherSummary(data.current.weather_code);
+                const emoji = getWeatherEmoji(data.current.weather_code);
+                document.getElementById('currentWeather').innerHTML = `
+                  <div class="weather-item">
+                    <div class="weather-details">
+                      <strong>Your Location</strong>
+                      <div>${data.current.temperature_2m}°F, ${summary}</div>
+                    </div>
+                    <div class="weather-emoji">${emoji}</div>
+                  </div>
+                `;
+              })
+              .catch(err => {
+                console.error(err);
+                document.getElementById('currentWeather').innerHTML = "Error loading weather.";
+              });
+          },
+          (error) => {
+            document.getElementById('currentSection').style.display = 'none';
+          }
+        );
+      } else {
+        document.getElementById('currentSection').style.display = 'none';
+      }
+    }
+
+    // On load, restore favorites and load current weather.
+    loadFavorites();
+    loadCurrentLocationWeather();
+    updateFavorites();
+  </script>
+</body>
+</html>
