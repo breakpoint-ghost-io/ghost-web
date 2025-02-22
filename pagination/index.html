@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iOS Demo Photo Search</title>
+  <style>
+    /* Global and iOS container styling */
+    body {
+      background: #f0f0f5;
+      margin: 0;
+      padding: 10px;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 100%;
+      max-width: 375px;
+      height: 100vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Header with search bar and cancel button */
+    .header {
+      padding: 10px 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+    .search-bar {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .cancel-btn {
+      margin-left: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: none;
+      background: transparent;
+      color: #007aff;
+      cursor: pointer;
+      display: none;
+    }
+    /* Content container */
+    .content-container {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      background: #fff;
+    }
+    /* Welcome page styling */
+    .welcome-page {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      padding: 20px;
+    }
+    .welcome-page h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .welcome-page p {
+      font-size: 16px;
+      color: #666;
+    }
+    /* Masonry container and layout */
+    .masonry-container {
+      display: none;
+      padding: 15px;
+    }
+    .masonry-column {
+      float: left;
+      width: calc(50% - 4px); /* 2 columns with 8px gap */
+      margin-right: 8px;
+    }
+    .masonry-column:last-child {
+      margin-right: 0;
+    }
+    .masonry-item {
+      margin-bottom: 8px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #eee;
+      cursor: pointer;
+    }
+    .masonry-item img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    /* Clear floats */
+    .masonry-container::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    /* Bottom footer for search results */
+    .bottom-footer {
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+      color: #555;
+      border-top: 1px solid #eee;
+      margin-top: 10px;
+      display: none;
+    }
+    /* App footer */
+    .footer {
+      text-align: center;
+      padding: 8px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      margin-top: auto;
+    }
+    .footer a {
+      color: #007aff;
+      text-decoration: none;
+    }
+    /* Photo Detail Screen */
+    #detailScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #fff;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+    }
+    #detailHeader {
+      position: relative;
+      padding: 10px 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #detailHeader button {
+      position: absolute;
+      left: 15px;
+      font-size: 14px;
+      border: none;
+      background: transparent;
+      color: #007aff;
+      cursor: pointer;
+    }
+    #detailContent {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    #detailContent img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    #detailContent .detail-info {
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">
+      <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search photos..." />
+        <button id="cancelSearch" class="cancel-btn">Cancel</button>
+      </div>
+    </div>
+    <div class="content-container" id="contentContainer">
+      <!-- Welcome page -->
+      <div id="welcomePage" class="welcome-page">
+        <h1>Photo Search</h1>
+        <p>This demo app uses hardcoded data from Pixabay to simulate search and pagination.</p>
+      </div>
+      <!-- Masonry container for search results -->
+      <div id="masonryContainer" class="masonry-container"></div>
+      <!-- Bottom footer for search results -->
+      <div id="bottomFooter" class="bottom-footer">You've reached the bottom</div>
+    </div>
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+    <!-- Photo Detail Screen -->
+    <div id="detailScreen">
+      <div id="detailHeader">
+        <button id="detailBack">&lt; Back</button>
+        <span>Photo Detail</span>
+      </div>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- Data: demo.json contents (using the attached demo.json) ---
+    const photosData = [
+      {
+        "id": 9416919,
+        "imageWidth": 7686,
+        "imageHeight": 5127,
+        "largeImageURL": "https://pixabay.com/get/gbf58f1de1b71f043fb24d38a971fb899908aa9bcc02835e8711a48825aeaf894cf0ad2bb7bc9f30f02f004dcafb2ddbb7e28bf5ed326809ac0c4e19710838a90_1280.jpg",
+        "likes": 44,
+        "user": "ahmetyuksek",
+        "description": "A breathtaking winter landscape with snow-covered peaks and a serene lake."
+      },
+      {
+        "id": 9399801,
+        "imageWidth": 3500,
+        "imageHeight": 4784,
+        "largeImageURL": "https://pixabay.com/get/g38ec956398c3a1d325dfcfb0ae33f475b48373f35a93493dd35614e0535f0ed21a04017f96b2f6904e541c352a5605d760d05ab7c3134cb34b2fa908e21fb119_1280.jpg",
+        "likes": 83,
+        "user": "sanek10",
+        "description": "A majestic bird captured in its natural habitat, showcasing the beauty of wildlife."
+      },
+      {
+        "id": 1869902,
+        "imageWidth": 5760,
+        "imageHeight": 3840,
+        "largeImageURL": "https://pixabay.com/get/ge8948fd1a0399e0eb1d1d2d3c5771f8b27a1eb446d77ea69352a5e3d9dda81e543766cdd9ddfb1ed4b86ce256b502b0cab1ccd9363a0cf01974374cd3b43c2b7_1280.jpg",
+        "likes": 1690,
+        "user": "Pexels",
+        "description": "A striking image featuring xmas, boxes, christmas wallpaper."
+      },
+      {
+        "id": 9394894,
+        "imageWidth": 6016,
+        "imageHeight": 4016,
+        "largeImageURL": "https://pixabay.com/get/g254061e480566390581ae9c186e3d79b3364ce5fb9ef95c199ee82415880f139eb2f9fc4a4bfa80e560b21ac86c7035fc12f9c1fff2b1aafb7e571475c15e847_1280.jpg",
+        "likes": 81,
+        "user": "Zachtleven",
+        "description": "Early morning cyclists ride through the misty sunrise, embracing the peaceful start of the day."
+      },
+      {
+        "id": 9361610,
+        "imageWidth": 8256,
+        "imageHeight": 5504,
+        "largeImageURL": "https://pixabay.com/get/g234ca936eef0393c1a6fffbff56f69662de088a927867f3e802b6c813ebb86ab328b6fdc33f1af0bd6246093ee390736929f4df1a3c5bbec5258faf699023da2_1280.jpg",
+        "likes": 143,
+        "user": "Gruendercoach",
+        "description": "A majestic bird captured in its natural habitat, showcasing the beauty of wildlife."
+      },
+      {
+        "id": 6540497,
+        "imageWidth": 3888,
+        "imageHeight": 2592,
+        "largeImageURL": "https://pixabay.com/get/g93a015055f0dc828166a3d5131eeb4ba60d9e137d01c45ec960f1eec1c3348979d30b0655f1e170fa197a6e6241dcbd8839d0f84dcfaa988380d8d10979ba035_1280.jpg",
+        "likes": 470,
+        "user": "FrankBeckerDE",
+        "description": "The rugged beauty of the Dolomites, where towering peaks meet the vast sky."
+      },
+      {
+        "id": 9390809,
+        "imageWidth": 5304,
+        "imageHeight": 7952,
+        "largeImageURL": "https://pixabay.com/get/g5e9bef2264f198cdea18b09d3333a004c7c7da6c940c59f13ea65e69dbf33509d2cc42d32e8001d1c6716b547bd7dd8cfa3f3c7624f1b9d6a0f82b3bfedb0473_1280.jpg",
+        "likes": 91,
+        "user": "ignartonosbg",
+        "description": "A mesmerizing close-up of a peacock feather, radiating vibrant colors."
+      },
+      {
+        "id": 1761292,
+        "imageWidth": 2201,
+        "imageHeight": 1240,
+        "largeImageURL": "https://pixabay.com/get/g9988e0323166120f4326c518513868b64889125feff85028c0dc44a241be551fb738a278b4c08260528d8032e931e1016789b8af51eefe0d4e58146aa083d634_1280.jpg",
+        "likes": 2743,
+        "user": "12019",
+        "description": "A striking image featuring landscape, hills, landscape."
+      },
+      {
+        "id": 2425121,
+        "imageWidth": 4460,
+        "imageHeight": 2973,
+        "largeImageURL": "https://pixabay.com/get/gdcec38ad9ddf0e7254853297e1a775e77a5dbf8c52a903a8b7c169200435dbb4ba52ac7d2ab0495636c635128807cd7c9bad9ec378bf897988041a349bafdd77_1280.jpg",
+        "likes": 2561,
+        "user": "5688709",
+        "description": "A striking image featuring boots, person, pug."
+      },
+      {
+        "id": 9389500,
+        "imageWidth": 7008,
+        "imageHeight": 3944,
+        "largeImageURL": "https://pixabay.com/get/g3d80d279a1d580edb6871e60d6ddf8a223510279c78ce832c1bccdb05c717aef449c57574ab6d98bb260eca524db1f9eea3e2b686541b03a8c790bc76ad7e045_1280.jpg",
+        "likes": 76,
+        "user": "pfreedom",
+        "description": "A striking image featuring kitten, fauna, domestic cat."
+      },
+      {
+        "id": 2534484,
+        "imageWidth": 6750,
+        "imageHeight": 1800,
+        "largeImageURL": "https://pixabay.com/get/gb1645dfc3bd07db2be66afbb92e8b67f894daec832c2ea4c9cd6e5f87a8acbe56738ce98efd0452771a2aa013162e146a61ba5cabe91f47e5a1b8005226232a4_1280.jpg",
+        "likes": 2341,
+        "user": "PIRO4D",
+        "description": "A striking image featuring mountain lake, nature, nature."
+      },
+      {
+        "id": 2435404,
+        "imageWidth": 6821,
+        "imageHeight": 2636,
+        "largeImageURL": "https://pixabay.com/get/g51a147e9d91a14a0f78f9d2b77e1e86dc943844e0f9f2da45cd31335516bb016191f3c9e6d7fb23de28d3092a2ed69c9cd266424abfe994126a606f82da11f46_1280.jpg",
+        "likes": 1107,
+        "user": "GregMontani",
+        "description": "Rolling sand dunes stretch endlessly, shaped by the whispering winds of the desert."
+      },
+      {
+        "id": 8595521,
+        "imageWidth": 3024,
+        "imageHeight": 4032,
+        "largeImageURL": "https://pixabay.com/get/gd8174c9e7727f745c32ed91b59502d2dfb29c050e1c3d386ccdfefcf54afed2380da4e90626b7b00be7143b16f9f73e098f9f1a625dc9a9c53e348af6211cfc5_1280.jpg",
+        "likes": 1095,
+        "user": "Mylene2401",
+        "description": "A striking image featuring flower wallpaper, blue sky, sky."
+      },
+      {
+        "id": 5017973,
+        "imageWidth": 5700,
+        "imageHeight": 3706,
+        "largeImageURL": "https://pixabay.com/get/g78505caa31bec8187c4783fc5e220adb0f8f8c4f7d2e2a63e662938b0c7bc9f9a62ea048508c888f2f9387ed3d78be508cc5a8f2e4097131d7a6f9c6269d8e50_1280.jpg",
+        "likes": 749,
+        "user": "JoshuaWoroniecki",
+        "description": "A striking image featuring black network, black technology, black computer."
+      },
+      {
+        "id": 9384798,
+        "imageWidth": 4794,
+        "imageHeight": 3572,
+        "largeImageURL": "https://pixabay.com/get/gecefddf88a372773d4f3708e5750a5d234688029896cab6228fa95b812722dda4169dec56ba33be7c03039692348ebc5c61eb41fa73a48921b9efdd5e9d191f1_1280.jpg",
+        "likes": 73,
+        "user": "Juergen57BS",
+        "description": "A majestic bird captured in its natural habitat, showcasing the beauty of wildlife."
+      },
+      {
+        "id": 9074037,
+        "imageWidth": 6016,
+        "imageHeight": 3384,
+        "largeImageURL": "https://pixabay.com/get/gd1dffe5d5f4dc6fdb2fa72c4dca2a4dc45ec0851e7ea3e8296c7c10dd9c4ded3fc9d04cecbd08c4648cc37d54a322060d389da2645e742dce9021ab36541caa4_1280.jpg",
+        "likes": 108,
+        "user": "AlexanderWeichsel",
+        "description": "A striking image featuring gate, shrine, japan."
+      },
+      {
+        "id": 8889871,
+        "imageWidth": 2736,
+        "imageHeight": 3648,
+        "largeImageURL": "https://pixabay.com/get/g48e155e92c2ea15fb90b25f72b172201648dbf5a98dc96ca828be6428d703445a03bedcc79912dbf1feba62bca8f58f0f78fff8ef95cd115a0354bf30154b83d_1280.jpg",
+        "likes": 130,
+        "user": "MartinaFliegerova",
+        "description": "A striking image featuring channel, water, river."
+      },
+      {
+        "id": 1820944,
+        "imageWidth": 2000,
+        "imageHeight": 1156,
+        "largeImageURL": "https://pixabay.com/get/g3985b696dee0f6e9120dd9e3b1998e1a22fdcfa22b0712e8f470834a12d0708258d4d0d6b183d58f46a7e9b1074122e27cd5895d61cfc12014653dfe97191da6_1280.jpg",
+        "likes": 1592,
+        "user": "Walkerssk",
+        "description": "A dazzling city skyline lights up the night, reflecting the heartbeat of urban life."
+      },
+      {
+        "id": 2915187,
+        "imageWidth": 4769,
+        "imageHeight": 3179,
+        "largeImageURL": "https://pixabay.com/get/g407cf189425a1d06af68382bd24c18ccf31f2ffc53e3d793b5ae18696ac8c4acc6a0ec6b8a4d43ee3e5c84006aaf1035f1beb7feaa56c55ac8cae340f2a80f60_1280.jpg",
+        "likes": 968,
+        "user": "Lukas_Rychvalsky",
+        "description": "A striking image featuring alone, man, alone."
+      },
+      {
+        "id": 2183637,
+        "imageWidth": 6000,
+        "imageHeight": 4000,
+        "largeImageURL": "https://pixabay.com/get/gec8ae988f3d05fcab0310320d47c472ca422b1163193f9e5210fd79447c8db57b77fa24bffe1ba217033349b3c15cf1e09cd78d9a99984c4a168b591dcc5714f_1280.jpg",
+        "likes": 1751,
+        "user": "FelixMittermeier",
+        "description": "A striking image featuring night, night sky, purple."
+      },
+      {
+        "id": 2343558,
+        "imageWidth": 2000,
+        "imageHeight": 1334,
+        "largeImageURL": "https://pixabay.com/get/g4162f26afaedfd5bc54c1e19bba5dd327fd35b2a77264a4959a195d249ed27718fdddfe0d59d1f2e80c2006e560fccc5ec723517705ebb5849e9bc596b0c349a_1280.jpg",
+        "likes": 1616,
+        "user": "kinkate",
+        "description": "A striking image featuring fitness, landscape, run."
+      },
+      {
+        "id": 9399436,
+        "imageWidth": 6000,
+        "imageHeight": 4000,
+        "largeImageURL": "https://pixabay.com/get/g3b0a131befb91949e80468bfb78cbe844415af9439ce1c93787410abf4e6c77ccff366c3f05750e6d2fdcd6903f0a8e778a6a52721368f508f4fe371a5efcf35_1280.jpg",
+        "likes": 41,
+        "user": "apnear40",
+        "description": "A striking image featuring flight, swans, species."
+      },
+      {
+        "id": 7733876,
+        "imageWidth": 5341,
+        "imageHeight": 3561,
+        "largeImageURL": "https://pixabay.com/get/gdab61e593e8b042271c85559667f2fcae9776064ca00e3e3d2a1c6b12c6095dfefcef482c00dfc504324092094f65b68643e2010511d9b50b49819955a61dbec_1280.jpg",
+        "likes": 270,
+        "user": "Manuel-H",
+        "description": "A striking image featuring astrophotography, milky way, night sky."
+      },
+      {
+        "id": 9376831,
+        "imageWidth": 3000,
+        "imageHeight": 2000,
+        "largeImageURL": "https://pixabay.com/get/g5ce207d5b7e2164066706f1d263bdae040fa0935f14e7c27f39bf3c8f28029a26bfd3eb5964ecc8f3f9d26c132b261fba8ad79d18cf9fc80721207ccb77df2a0_1280.jpg",
+        "likes": 72,
+        "user": "bitnikgao",
+        "description": "A majestic bird captured in its natural habitat, showcasing the beauty of wildlife."
+      },
+      {
+        "id": 9380294,
+        "imageWidth": 6240,
+        "imageHeight": 4160,
+        "largeImageURL": "https://pixabay.com/get/g49c8509dae3924dd52aa0f0c4b2204736be167752953c5858921e037c87de0e423699fb7a3af0f8a5951c5e4d91c5e2661ed9a54555f7f7eba81cd2e3da785f0_1280.jpg",
+        "likes": 74,
+        "user": "shogun",
+        "description": "A quiet forest path bathed in dappled sunlight, inviting you into nature’s embrace."
+      },
+      {
+        "id": 8616125,
+        "imageWidth": 5197,
+        "imageHeight": 2923,
+        "largeImageURL": "https://pixabay.com/get/g3a3c64d3e8a1af4efcbc698b2ab837615f87c269a2f8613bafa6ff2400aea77fe7da17a0a6a9dc861708bfb50b4e23e7ab060125aea2165af9366caa321e4e2e_1280.jpg",
+        "likes": 326,
+        "user": "ChiemSeherin",
+        "description": "Delicate spring flowers bloom, painting the world in vibrant pastels."
+      },
+      {
+        "id": 6603120,
+        "imageWidth": 3500,
+        "imageHeight": 2327,
+        "largeImageURL": "https://pixabay.com/get/ge53313a1b50a5ee7cf6d9fe656bc61499c1f93a55febed45707d657cb26e9feaa4d9f1e7acf8bcbb69e44d6459880fafe779fd15218f2da34c6b71bb393cee94_1280.jpg",
+        "likes": 218,
+        "user": "Vika_Glitter",
+        "description": "A striking image featuring games, game console, gamepad."
+      },
+      {
+        "id": 4955005,
+        "imageWidth": 6048,
+        "imageHeight": 4024,
+        "largeImageURL": "https://pixabay.com/get/gbbf4cbdf9754d605556c714b669f244f2e96058f8c9f65a4ef41765fe10a5318d1c5133094823819abfeaf0fdec02bbea6f5c3bfb6f0b28c3094c49908bc606d_1280.jpg",
+        "likes": 893,
+        "user": "Tama66",
+        "description": "A striking image featuring landscape, meditation, meditation."
+      },
+      {
+        "id": 2179624,
+        "imageWidth": 3008,
+        "imageHeight": 2000,
+        "largeImageURL": "https://pixabay.com/get/g52ad3cb7f0042e4fd6c59c183cd4a5046faa65dadc6a6543a08c663cafbfda65cc47b886b3fe218ac7549d215d54c35ce2aad1f568d1cbc7722ec3c3dfe12752_1280.jpg",
+        "likes": 1899,
+        "user": "kordi_vahle",
+        "description": "Golden hues reflect off the waves as the sun sets on a tranquil beach."
+      },
+      {
+        "id": 1052010,
+        "imageWidth": 4548,
+        "imageHeight": 3411,
+        "largeImageURL": "https://pixabay.com/get/ge992de3b007d7039a4500c33211f4f692965016d5d4a4d0f159e82abcda51964024b0953a8bb22da9f96419d4b0c73c3a2e2058529cd216042440c83114d62b0_1280.jpg",
+        "likes": 1663,
+        "user": "DariuszSankowski",
+        "description": "A striking image featuring education, text, knowledge."
+      },
+      {
+        "id": 8546849,
+        "imageWidth": 3120,
+        "imageHeight": 2080,
+        "largeImageURL": "https://pixabay.com/get/g27ab2c1f569db0be6e572d6bca005a288675773a72f85505b5c520d5ba27c202b0789f86b443809f6d99cc775bfea2f7c2d4c04a1b32cc63b5298a726eab80d4_1280.jpg",
+        "likes": 554,
+        "user": "ZenAga",
+        "description": "A striking image featuring floral background, windows wallpaper, mac wallpaper."
+      }
+    ];
+    // --- End of demo.json data ---
+
+    // Global state for pagination.
+    let pages = []; // Array of 8 pages (each page is an array of 15 images)
+    let currentPage = 0;
+    const TOTAL_PAGES = 8;
+    const IMAGES_PER_PAGE = 15;
+    const numColumns = 2; // fixed number of masonry columns
+    let masonryColumns = []; // to store { element, height }
+
+    // Utility: Shuffle array (Fisher–Yates)
+    function shuffleArray(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Generate pages: 8 pages total, each with 15 images.
+    // We want to avoid repeats until all images are used.
+    function generatePages() {
+      const totalNeeded = TOTAL_PAGES * IMAGES_PER_PAGE; // 8*15 = 120
+      let result = [];
+      let currentPermutation = shuffleArray(photosData);
+      let index = 0;
+      for (let p = 0; p < TOTAL_PAGES; p++) {
+        let page = [];
+        while (page.length < IMAGES_PER_PAGE) {
+          if (index >= currentPermutation.length) {
+            currentPermutation = shuffleArray(photosData);
+            index = 0;
+          }
+          page.push(currentPermutation[index]);
+          index++;
+        }
+        result.push(page);
+      }
+      return result;
+    }
+
+    // Initialize Masonry layout: create column elements.
+    function initMasonryLayout() {
+      const container = document.getElementById('masonryContainer');
+      container.innerHTML = "";
+      masonryColumns = [];
+      for (let i = 0; i < numColumns; i++) {
+        const col = document.createElement('div');
+        col.className = 'masonry-column';
+        masonryColumns.push({ element: col, height: 0 });
+        container.appendChild(col);
+      }
+    }
+
+    // Render one page of photos in Masonry layout.
+    function renderMasonryPage() {
+      const currentImages = pages[currentPage];
+      const gap = 8; // vertical gap in pixels
+      // Get the computed width of a column.
+      const colWidth = masonryColumns[0].element.clientWidth;
+      currentImages.forEach(photo => {
+        const aspectRatio = photo.imageHeight / photo.imageWidth;
+        const computedHeight = colWidth * aspectRatio;
+        const item = document.createElement('div');
+        item.className = 'masonry-item';
+        item.style.height = computedHeight + 'px';
+        item.innerHTML = `<img src="${photo.largeImageURL}" alt="${photo.description}" />`;
+        item.addEventListener('click', () => openDetail(photo));
+        let targetCol = masonryColumns[0];
+        for (let col of masonryColumns) {
+          if (col.height < targetCol.height) {
+            targetCol = col;
+          }
+        }
+        targetCol.element.appendChild(item);
+        targetCol.height += computedHeight + gap;
+      });
+      if (currentPage === TOTAL_PAGES - 1) {
+        document.getElementById('bottomFooter').style.display = "block";
+      }
+      // Auto-load next page if container isn’t scrollable.
+      setTimeout(() => {
+        const container = document.getElementById('contentContainer');
+        if (container.scrollHeight <= container.clientHeight && currentPage < TOTAL_PAGES - 1) {
+          currentPage++;
+          renderMasonryPage();
+        }
+      }, 100);
+    }
+
+    // Perform a "search": generate pages, reset current page, initialize Masonry, render page.
+    function performSearch() {
+      pages = generatePages();
+      currentPage = 0;
+      initMasonryLayout();
+      document.getElementById('bottomFooter').style.display = "none";
+      renderMasonryPage();
+    }
+
+    // Infinite scroll: load next page when near bottom.
+    const contentContainer = document.getElementById('contentContainer');
+    contentContainer.addEventListener('scroll', () => {
+      const masonryContainer = document.getElementById('masonryContainer');
+      if (masonryContainer.style.display === "none") return;
+      const { scrollTop, scrollHeight, clientHeight } = contentContainer;
+      if (scrollTop + clientHeight >= scrollHeight - 50) {
+        if (currentPage < TOTAL_PAGES - 1) {
+          currentPage++;
+          renderMasonryPage();
+        }
+      }
+    });
+
+    // --- Search and Welcome Page Handling ---
+    const searchInput = document.getElementById('searchInput');
+    const cancelBtn = document.getElementById('cancelSearch');
+    const welcomePage = document.getElementById('welcomePage');
+    const masonryContainer = document.getElementById('masonryContainer');
+
+    let searchTimeout;
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      const query = e.target.value.trim();
+      if (query.length < 3) {
+        welcomePage.style.display = "flex";
+        masonryContainer.style.display = "none";
+        cancelBtn.style.display = "none";
+        document.getElementById('bottomFooter').style.display = "none";
+        return;
+      }
+      searchTimeout = setTimeout(() => {
+        if (query.length >= 3) {
+          welcomePage.style.display = "none";
+          masonryContainer.style.display = "block";
+          cancelBtn.style.display = "block";
+          performSearch();
+        }
+      }, 300);
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      searchInput.value = "";
+      welcomePage.style.display = "flex";
+      masonryContainer.style.display = "none";
+      cancelBtn.style.display = "none";
+      document.getElementById('bottomFooter').style.display = "none";
+    });
+
+    // --- Photo Detail Screen Implementation ---
+    const detailScreen = document.getElementById('detailScreen');
+    const detailContent = document.getElementById('detailContent');
+    const detailBack = document.getElementById('detailBack');
+
+    function openDetail(photo) {
+      detailContent.innerHTML = `
+        <img src="${photo.largeImageURL}" alt="${photo.description}" />
+        <div class="detail-info">
+          <p><strong>Description:</strong> ${photo.description || "No description"}</p>
+          <p><strong>User:</strong> ${photo.user}</p>
+          <p><strong>Likes:</strong> ${photo.likes}</p>
+          <p><strong>Dimensions:</strong> ${photo.imageWidth} x ${photo.imageHeight}</p>
+        </div>
+      `;
+      detailScreen.style.display = "flex";
+    }
+
+    function closeDetail() {
+      detailScreen.style.display = "none";
+    }
+
+    detailBack.addEventListener('click', closeDetail);
+  </script>
+</body>
+</html>
