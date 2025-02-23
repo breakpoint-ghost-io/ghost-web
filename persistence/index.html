@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rideshare Driver Onboarding</title>
+  <style>
+    /* Global and iOS container styling */
+    body {
+      background: #f0f0f5;
+      margin: 0;
+      padding: 10px;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 100%;
+      max-width: 375px;
+      height: 100vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Header styling */
+    .header {
+      padding: 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    /* View container for each step */
+    .view {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: none;
+    }
+    .view.active {
+      display: flex;
+      flex-direction: column;
+    }
+    /* Form field styling */
+    .form-field {
+      margin-bottom: 15px;
+    }
+    .form-field label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .form-field input[type="text"],
+    .form-field input[type="email"],
+    .form-field input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    /* Hide native file input */
+    .form-field input[type="file"] {
+      display: none;
+    }
+    /* Photo placeholder styling */
+    .photo-placeholder {
+      width: 100%;
+      height: 150px;
+      background: #f2f2f2;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #666;
+      cursor: pointer;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .photo-placeholder.uploaded {
+      height: auto;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .photo-placeholder.uploaded img {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      display: block;
+    }
+    /* Button styling */
+    .btn {
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .btn.primary {
+      background: #007aff;
+      color: #fff;
+    }
+    .btn.secondary {
+      background: #ccc;
+      color: #333;
+    }
+    .btn.destructive {
+      background: #ff3b30;
+      color: #fff;
+    }
+    .btn.link {
+      background: none;
+      color: #007aff;
+      text-decoration: underline;
+      padding: 0;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+    }
+    /* Disabled state styling */
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    /* Summary section styling */
+    .summary-section {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .summary-section h3 {
+      margin: 0 0 15px;
+      font-size: 16px;
+      color: #007aff;
+    }
+    .summary-section p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #333;
+    }
+    .edit-btn {
+      float: right;
+      font-size: 12px;
+      background: none;
+      border: none;
+      color: #007aff;
+      cursor: pointer;
+    }
+    /* Footer styling */
+    .footer {
+      text-align: center;
+      padding: 10px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+    }
+    .footer a {
+      color: #007aff;
+      text-decoration: none;
+    }
+    /* Photo Detail Screen */
+    #detailScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #fff;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+    }
+    #detailHeader {
+      position: relative;
+      padding: 10px 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #detailHeader button {
+      position: absolute;
+      left: 15px;
+      font-size: 14px;
+      border: none;
+      background: transparent;
+      color: #007aff;
+      cursor: pointer;
+    }
+    #detailContent {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    #detailContent img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    #detailContent .detail-info {
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">Driver Onboarding</div>
+    
+    <!-- Step 1: Personal Info -->
+    <div id="step1" class="view">
+      <h2>Personal Info</h2>
+      <div class="form-field">
+        <label for="name">Name *</label>
+        <input type="text" id="name" placeholder="Enter your name" />
+      </div>
+      <div class="form-field">
+        <label for="email">Email *</label>
+        <input type="email" id="email" placeholder="name@example.com" />
+      </div>
+      <div>
+        <button class="btn primary" id="saveStep1" disabled>Save</button>
+      </div>
+    </div>
+    
+    <!-- Step 2: Vehicle Info -->
+    <div id="step2" class="view">
+      <h2>Vehicle Info</h2>
+      <div class="form-field">
+        <label for="make">Vehicle Make *</label>
+        <input type="text" id="make" placeholder="e.g., Toyota" />
+      </div>
+      <div class="form-field">
+        <label for="model">Vehicle Model *</label>
+        <input type="text" id="model" placeholder="e.g., Camry" />
+      </div>
+      <div class="form-field">
+        <label for="year">Vehicle Year * (2000-2025)</label>
+        <input type="number" id="year" placeholder="e.g., 2018" />
+      </div>
+      <div class="form-field">
+        <label for="seats">Number of Seats * (4-8)</label>
+        <input type="number" id="seats" placeholder="e.g., 4" />
+      </div>
+      <div>
+        <button class="btn secondary" id="backToStep1">Go Back</button>
+        <button class="btn primary" id="saveStep2" disabled>Save</button>
+      </div>
+    </div>
+    
+    <!-- Step 3: Photo Upload -->
+    <div id="step3" class="view">
+      <h2>Photo Upload</h2>
+      <div class="form-field">
+        <label>Driver’s License</label>
+        <div id="placeholderDriverLicense" class="photo-placeholder">Upload</div>
+        <input type="file" id="driverLicense" accept="image/*" />
+      </div>
+      <div class="form-field">
+        <label>Proof of Insurance</label>
+        <div id="placeholderInsurance" class="photo-placeholder">Upload</div>
+        <input type="file" id="insurance" accept="image/*" />
+      </div>
+      <div>
+        <button class="btn secondary" id="backToStep2">Go Back</button>
+        <button class="btn primary" id="saveStep3" disabled>Save</button>
+      </div>
+    </div>
+    
+    <!-- Summary Screen -->
+    <div id="summary" class="view">
+      <h2>Summary</h2>
+      <div class="summary-section" id="summaryPersonal"></div>
+      <div class="summary-section" id="summaryVehicle"></div>
+      <div class="summary-section" id="summaryPhotos"></div>
+      <div style="margin-top:20px;">
+        <button class="btn destructive" id="restart">Restart</button>
+      </div>
+    </div>
+    
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+    
+    <!-- Photo Detail Screen -->
+    <div id="detailScreen">
+      <div id="detailHeader">
+        <button id="detailBack">&lt; Back</button>
+        <span>Photo Detail</span>
+      </div>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+  
+  <script>
+    // --- Persistence & Onboarding Data ---
+    const STORAGE_KEY = "driverOnboardingData";
+    let onboardingData = {
+      currentStep: 1,
+      personal: { name: "", email: "" },
+      vehicle: { make: "", model: "", year: "", seats: "" },
+      photos: { driverLicense: "", insurance: "" }
+    };
+    
+    // Defensive load of persisted data.
+    function loadData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.currentStep >= 1 && parsed.currentStep <= 4) {
+            onboardingData = parsed;
+          } else {
+            onboardingData = {
+              currentStep: 1,
+              personal: { name: "", email: "" },
+              vehicle: { make: "", model: "", year: "", seats: "" },
+              photos: { driverLicense: "", insurance: "" }
+            };
+          }
+        } catch (e) {
+          console.error("Error parsing stored data. Resetting.", e);
+          onboardingData = {
+            currentStep: 1,
+            personal: { name: "", email: "" },
+            vehicle: { make: "", model: "", year: "", seats: "" },
+            photos: { driverLicense: "", insurance: "" }
+          };
+        }
+      }
+    }
+    
+    function persistData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(onboardingData));
+    }
+    
+    function showStep(step) {
+      onboardingData.currentStep = step;
+      persistData();
+      document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+      if (step === 1) {
+        document.getElementById('step1').classList.add('active');
+        document.getElementById('name').value = onboardingData.personal.name;
+        document.getElementById('email').value = onboardingData.personal.email;
+        updateStep1SaveState();
+      } else if (step === 2) {
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('make').value = onboardingData.vehicle.make;
+        document.getElementById('model').value = onboardingData.vehicle.model;
+        document.getElementById('year').value = onboardingData.vehicle.year;
+        document.getElementById('seats').value = onboardingData.vehicle.seats;
+        updateStep2SaveState();
+      } else if (step === 3) {
+        document.getElementById('step3').classList.add('active');
+        updateStep3SaveState();
+      } else if (step === 4) {
+        document.getElementById('summary').classList.add('active');
+        document.getElementById('summary').scrollTop = 0;
+        renderSummary();
+      }
+    }
+    
+    // --- Validation Helpers ---
+    function isValidEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+    
+    // --- Step 1: Personal Info ---
+    function updateStep1SaveState() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const btn = document.getElementById('saveStep1');
+      btn.disabled = !(name && isValidEmail(email));
+    }
+    document.getElementById('name').addEventListener('input', updateStep1SaveState);
+    document.getElementById('email').addEventListener('input', updateStep1SaveState);
+    
+    document.getElementById('saveStep1').addEventListener('click', () => {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      if (!name) {
+        alert("Please enter your name.");
+        return;
+      }
+      if (!isValidEmail(email)) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+      onboardingData.personal = { name, email };
+      persistData();
+      showStep(2);
+    });
+    
+    // --- Step 2: Vehicle Info ---
+    function updateStep2SaveState() {
+      const make = document.getElementById('make').value.trim();
+      const model = document.getElementById('model').value.trim();
+      const year = document.getElementById('year').value.trim();
+      const seats = document.getElementById('seats').value.trim();
+      const btn = document.getElementById('saveStep2');
+      const yearNum = parseInt(year);
+      const seatsNum = parseInt(seats);
+      btn.disabled = !(make && model && !isNaN(yearNum) && yearNum >= 2000 && yearNum <= 2025 && !isNaN(seatsNum) && seatsNum >= 4 && seatsNum <= 8);
+    }
+    document.getElementById('make').addEventListener('input', updateStep2SaveState);
+    document.getElementById('model').addEventListener('input', updateStep2SaveState);
+    document.getElementById('year').addEventListener('input', updateStep2SaveState);
+    document.getElementById('seats').addEventListener('input', updateStep2SaveState);
+    
+    document.getElementById('saveStep2').addEventListener('click', () => {
+      const make = document.getElementById('make').value.trim();
+      const model = document.getElementById('model').value.trim();
+      const year = document.getElementById('year').value.trim();
+      const seats = document.getElementById('seats').value.trim();
+      const yearNum = parseInt(year);
+      const seatsNum = parseInt(seats);
+      if (!make) {
+        alert("Please enter vehicle make.");
+        return;
+      }
+      if (!model) {
+        alert("Please enter vehicle model.");
+        return;
+      }
+      if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2025) {
+        alert("Please enter a valid vehicle year between 2000 and 2025.");
+        return;
+      }
+      if (isNaN(seatsNum) || seatsNum < 4 || seatsNum > 8) {
+        alert("Please enter a valid number of seats (4-8).");
+        return;
+      }
+      onboardingData.vehicle = { make, model, year: yearNum, seats: seatsNum };
+      persistData();
+      showStep(3);
+    });
+    
+    // --- Navigation: Back Buttons ---
+    document.getElementById('backToStep1').addEventListener('click', () => {
+      showStep(1);
+    });
+    document.getElementById('backToStep2').addEventListener('click', () => {
+      showStep(2);
+    });
+    
+    // --- Custom Photo Upload UI for Step 3 ---
+    function setupPhotoPlaceholder(placeholderId, inputId, photoKey) {
+      const placeholder = document.getElementById(placeholderId);
+      const inputEl = document.getElementById(inputId);
+      
+      // When clicking the placeholder, trigger file input.
+      placeholder.addEventListener('click', () => {
+        inputEl.click();
+      });
+      
+      inputEl.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            placeholder.classList.add('uploaded');
+            placeholder.innerHTML = `<img src="${evt.target.result}" alt="Uploaded Photo" />`;
+            onboardingData.photos[photoKey] = evt.target.result;
+            updateStep3SaveState();
+          }
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+    
+    setupPhotoPlaceholder('placeholderDriverLicense', 'driverLicense', 'driverLicense');
+    setupPhotoPlaceholder('placeholderInsurance', 'insurance', 'insurance');
+    
+    function updateStep3SaveState() {
+      const btn = document.getElementById('saveStep3');
+      btn.disabled = !(onboardingData.photos.driverLicense && onboardingData.photos.insurance);
+    }
+    
+    document.getElementById('saveStep3').addEventListener('click', () => {
+      if (!onboardingData.photos.driverLicense || !onboardingData.photos.insurance) {
+        alert("Please upload both photos.");
+        return;
+      }
+      persistData();
+      showStep(4);
+    });
+    
+    // --- Summary Screen ---
+    function renderSummary() {
+      const personalDiv = document.getElementById('summaryPersonal');
+      const vehicleDiv = document.getElementById('summaryVehicle');
+      const photosDiv = document.getElementById('summaryPhotos');
+      personalDiv.innerHTML = `
+        <h3>Personal Info <button class="edit-btn" onclick="showStep(1)">Edit</button></h3>
+        <p><strong>Name:</strong> ${onboardingData.personal.name}</p>
+        <p><strong>Email:</strong> ${onboardingData.personal.email}</p>
+      `;
+      vehicleDiv.innerHTML = `
+        <h3>Vehicle Info <button class="edit-btn" onclick="showStep(2)">Edit</button></h3>
+        <p><strong>Make:</strong> ${onboardingData.vehicle.make}</p>
+        <p><strong>Model:</strong> ${onboardingData.vehicle.model}</p>
+        <p><strong>Year:</strong> ${onboardingData.vehicle.year}</p>
+        <p><strong>Seats:</strong> ${onboardingData.vehicle.seats}</p>
+      `;
+      photosDiv.innerHTML = `
+        <h3>Photo Upload <button class="edit-btn" onclick="showStep(3)">Edit</button></h3>
+        <p style="margin-top:15px;"><strong>Driver’s License:</strong><br/> ${onboardingData.photos.driverLicense ? "<img src='" + onboardingData.photos.driverLicense + "' alt='Driver License' style='max-width:100%; margin-top:10px;' />" : "Not uploaded"}</p>
+        <p style="margin-top:15px;"><strong>Proof of Insurance:</strong><br/> ${onboardingData.photos.insurance ? "<img src='" + onboardingData.photos.insurance + "' alt='Insurance' style='max-width:100%; margin-top:10px;' />" : "Not uploaded"}</p>
+      `;
+    }
+    
+    document.getElementById('restart').addEventListener('click', () => {
+      if (confirm("Are you sure you want to restart? All data will be cleared.")) {
+        localStorage.removeItem(STORAGE_KEY);
+        onboardingData = {
+          currentStep: 1,
+          personal: { name: "", email: "" },
+          vehicle: { make: "", model: "", year: "", seats: "" },
+          photos: { driverLicense: "", insurance: "" }
+        };
+        showStep(1);
+      }
+    });
+    
+    // --- Photo Detail Screen Implementation ---
+    const detailScreen = document.getElementById('detailScreen');
+    const detailContent = document.getElementById('detailContent');
+    const detailBack = document.getElementById('detailBack');
+    
+    function openDetail(photo) {
+      detailContent.innerHTML = `
+        <img src="${photo.largeImageURL}" alt="${photo.description}" />
+        <div class="detail-info">
+          <p><strong>Description:</strong> ${photo.description || "No description"}</p>
+          <p><strong>User:</strong> ${photo.user}</p>
+          <p><strong>Likes:</strong> ${photo.likes}</p>
+          <p><strong>Dimensions:</strong> ${photo.imageWidth} x ${photo.imageHeight}</p>
+        </div>
+      `;
+      detailScreen.style.display = "flex";
+    }
+    
+    function closeDetail() {
+      detailScreen.style.display = "none";
+    }
+    detailBack.addEventListener('click', closeDetail);
+    
+    // --- Onboarding Persistence & Resume ---
+    window.addEventListener('load', () => {
+      loadData();
+      if (onboardingData.currentStep >= 1 && onboardingData.currentStep <= 3) {
+        showStep(onboardingData.currentStep);
+      } else if (onboardingData.currentStep === 4) {
+        showStep(4);
+      } else {
+        showStep(1);
+      }
+    });
+  </script>
+</body>
+</html>
