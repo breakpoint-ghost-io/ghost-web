@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Loading Animation</title>
+  <style>
+    /* Dark Mode iOS-like Phone Container (flexible sizing) */
+    body {
+      background: #000;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 90vw;
+      max-width: 375px;
+      height: 90vh;
+      max-height: 812px;
+      background: #1C1C1E;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+    .header {
+      flex: 0 0 auto;
+      padding: 15px;
+      background: #2C2C2E;
+      border-bottom: 1px solid #3A3A3C;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .footer {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 15px;
+      background: #2C2C2E;
+      border-top: 1px solid #3A3A3C;
+      font-size: 12px;
+    }
+    .footer a {
+      color: #0A84FF;
+      text-decoration: none;
+    }
+    /* Main content area */
+    .content {
+      flex: 1 1 auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+    /* Test Buttons container: vertically stacked at bottom */
+    .test-buttons {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 15px;
+    }
+    .test-buttons button {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+    }
+    /* Specific colors for test buttons */
+    #btnStartLoading {
+      background: #fff;
+      color: #000;
+    }
+    #btnSuccess {
+      background: #34C759;
+    }
+    #btnError {
+      background: #FF3B30;
+    }
+    .test-buttons button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    /* Loading Indicator Component */
+    .loading-indicator {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .indicator {
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 4px;
+      animation: roll 2s infinite ease-in-out;
+      transition: opacity 0.3s, transform 0.3s, background-color 0.3s;
+    }
+    .indicator-label {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #fff;
+      text-align: center;
+      transition: opacity 0.3s;
+    }
+    /* Custom "roll" keyframes: square rolls forward then backward */
+    @keyframes roll {
+      0% {
+        transform: translateX(-30px) rotate(0deg);
+      }
+      50% {
+        transform: translateX(30px) rotate(180deg);
+      }
+      100% {
+        transform: translateX(-30px) rotate(0deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">Loading Animation</div>
+    
+    <!-- Main content area -->
+    <div class="content">
+      <!-- Loading Indicator Component -->
+      <div id="loadingIndicator" class="loading-indicator">
+        <div id="indicator" class="indicator"></div>
+        <div id="indicatorLabel" class="indicator-label">Loading</div>
+      </div>
+    </div>
+    
+    <!-- Test Buttons (stacked vertically) -->
+    <div class="test-buttons">
+      <button id="btnStartLoading">Start Loading</button>
+      <button id="btnSuccess" disabled>Simulate Success</button>
+      <button id="btnError" disabled>Simulate Error</button>
+    </div>
+    
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+  </div>
+  
+  <script>
+    (function() {
+      const indicatorContainer = document.getElementById('loadingIndicator');
+      const indicator = document.getElementById('indicator');
+      const label = document.getElementById('indicatorLabel');
+      
+      let currentState = "hidden";
+      let dismissTimeout = null;
+      let onDismissCallback = null;
+      let loadingActive = false;
+      
+      const DEFAULT_DISMISS_DELAY = 3000;
+      const MAX_SHIFT = 30; // maximum horizontal shift
+      
+      function show() {
+        indicatorContainer.style.display = "flex";
+        indicator.style.opacity = "1";
+        label.style.opacity = "1";
+        currentState = "loading";
+        loadingActive = true;
+        updateTestButtons();
+      }
+      
+      function hide() {
+        indicator.style.opacity = "0";
+        label.style.opacity = "0";
+        setTimeout(() => {
+          indicatorContainer.style.display = "none";
+          clearTimeout(dismissTimeout);
+          if (onDismissCallback) {
+            onDismissCallback();
+            onDismissCallback = null;
+          }
+          currentState = "hidden";
+          loadingActive = false;
+          updateTestButtons();
+        }, 300);
+      }
+      
+      function updateTestButtons() {
+        document.getElementById('btnSuccess').disabled = !loadingActive;
+        document.getElementById('btnError').disabled = !loadingActive;
+      }
+      
+      function setState(state, options = {}) {
+        clearTimeout(dismissTimeout);
+        onDismissCallback = options.onDismiss || null;
+        
+        if (state === "loading") {
+          show();
+          // Set indicator to white during loading.
+          indicator.style.backgroundColor = "#fff";
+          indicator.style.animation = "roll 2s infinite ease-in-out";
+          label.textContent = "Loading";
+          indicator.style.opacity = "1";
+          label.style.opacity = "1";
+          indicator.style.transform = "";
+          currentState = "loading";
+        } else if (state === "success" || state === "error") {
+          if (currentState === "hidden") return;
+          // Capture current transform to preserve in-place position.
+          const computedTransform = window.getComputedStyle(indicator).transform;
+          indicator.style.animation = "none";
+          if (computedTransform && computedTransform !== "none") {
+            indicator.style.transform = computedTransform;
+          }
+          // Compute current translation X from the computed transform matrix.
+          let tx = 0;
+          const matrixMatch = computedTransform.match(/matrix.*\((.+)\)/);
+          if (matrixMatch) {
+            const values = matrixMatch[1].split(', ');
+            tx = parseFloat(values[4]) || 0;
+          }
+          // Determine duration proportional to remaining distance.
+          let duration = Math.abs(tx) / MAX_SHIFT * 0.3;
+          duration = Math.max(duration, 0.2);
+          indicator.style.transition = `transform ${duration}s linear, background-color 0.3s linear`;
+          // Use requestAnimationFrame to trigger the transition
+          requestAnimationFrame(() => {
+            indicator.style.transform = "none";
+            indicator.style.backgroundColor = (state === "success") ? "#34C759" : "#FF3B30";
+            label.textContent = (state === "success") ? "Success" : "Error";
+          });
+          currentState = state;
+          loadingActive = false;
+          updateTestButtons();
+          dismissTimeout = setTimeout(hide, options.dismissDelay || DEFAULT_DISMISS_DELAY);
+        }
+      }
+      
+      indicatorContainer.addEventListener("click", () => {
+        if (currentState === "success" || currentState === "error") {
+          hide();
+        }
+      });
+      
+      window.loadingIndicator = { setState, hide };
+    })();
+    
+    // Test buttons wiring:
+    document.getElementById('btnStartLoading').addEventListener('click', () => {
+      loadingIndicator.setState("loading");
+    });
+    document.getElementById('btnSuccess').addEventListener('click', () => {
+      loadingIndicator.setState("success", {
+        dismissDelay: 3000,
+        onDismiss: () => console.log("Dismissed Success")
+      });
+    });
+    document.getElementById('btnError').addEventListener('click', () => {
+      loadingIndicator.setState("error", {
+        dismissDelay: 3000,
+        onDismiss: () => console.log("Dismissed Error")
+      });
+    });
+  </script>
+</body>
+</html>
