@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bucket Fill Demo</title>
+  <style>
+    /* iOS-style phone container (light mode) */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 90vw;
+      max-width: 375px;
+      height: 90vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      flex: 0 0 auto;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+      color: #333;
+      /* Use normal weight */
+      font-weight: normal;
+    }
+    .content {
+      flex: 1 1 auto;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    /* Grid container styling */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 2px;
+      background: #f7f7f7;
+      padding: 2px;
+      border-radius: 6px;
+    }
+    .grid-cell {
+      background: #fff;
+      border: 1px solid #ddd;
+      text-align: center;
+      /* Use aspect-ratio to force perfect squares */
+      aspect-ratio: 1 / 1;
+      padding: 8px;
+      font-size: 16px;
+      color: #333;
+      cursor: pointer;
+      user-select: none;
+      /* Use normal font weight */
+      font-weight: normal;
+      transition: background 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* Filled state classes */
+    .grid-cell.filled-1 {
+      background: #FF3B30;
+      color: #fff;
+    }
+    .grid-cell.filled-2 {
+      background: #34C759;
+      color: #fff;
+    }
+    .grid-cell.filled-3 {
+      background: #0A84FF;
+      color: #fff;
+    }
+    /* Controls container for Restart button */
+    .controls {
+      flex: 0 0 auto;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+    }
+    .controls button {
+      padding: 12px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #0A84FF;
+      color: #fff;
+    }
+    .controls button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .footer {
+      flex: 0 0 auto;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      padding: 15px;
+      text-align: center;
+      font-size: 12px;
+      color: #333;
+    }
+    .footer a {
+      color: #007aff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">Bucket Fill</div>
+    
+    <!-- Main content area with grid -->
+    <div class="content">
+      <div id="grid" class="grid-container"></div>
+    </div>
+    
+    <!-- Controls: Restart Button -->
+    <div class="controls">
+      <button id="btnRestart">Restart</button>
+    </div>
+    
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+  </div>
+  
+  <script>
+    // Grid dimensions: 10 rows, 8 columns
+    const ROWS = 10;
+    const COLS = 8;
+    
+    // Color mapping: 1 = Red, 2 = Green, 3 = Blue.
+    const numberToColor = {
+      1: "#FF3B30",
+      2: "#34C759",
+      3: "#0A84FF"
+    };
+    
+    // Function to generate grid data
+    function generateGridData() {
+      const data = [];
+      for (let r = 0; r < ROWS; r++) {
+        data[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          data[r][c] = Math.floor(Math.random() * 3) + 1;
+        }
+      }
+      return data;
+    }
+    
+    let gridData = generateGridData();
+    
+    const gridEl = document.getElementById("grid");
+    let cellElements = [];
+    
+    // Function to render the grid
+    function renderGrid() {
+      gridEl.innerHTML = "";
+      cellElements = [];
+      for (let r = 0; r < ROWS; r++) {
+        cellElements[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement("div");
+          cell.classList.add("grid-cell");
+          cell.textContent = gridData[r][c];
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.addEventListener("click", () => {
+            bucketFill(r, c);
+          });
+          gridEl.appendChild(cell);
+          cellElements[r][c] = cell;
+        }
+      }
+    }
+    
+    // Flood fill algorithm (DFS)
+    function bucketFill(startRow, startCol) {
+      const targetNumber = gridData[startRow][startCol];
+      const fillClass = "filled-" + targetNumber;
+      const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      const stack = [];
+      stack.push([startRow, startCol]);
+      while (stack.length) {
+        const [r, c] = stack.pop();
+        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+        if (visited[r][c]) continue;
+        if (gridData[r][c] !== targetNumber) continue;
+        visited[r][c] = true;
+        const cell = cellElements[r][c];
+        cell.classList.add(fillClass);
+        // Continue to adjacent cells (4 directions)
+        stack.push([r - 1, c]);
+        stack.push([r + 1, c]);
+        stack.push([r, c - 1]);
+        stack.push([r, c + 1]);
+      }
+    }
+    
+    // Restart the grid by generating new grid data and re-rendering the grid.
+    function restartGrid() {
+      gridData = generateGridData();
+      renderGrid();
+    }
+    
+    // Wire up the Restart button.
+    document.getElementById("btnRestart").addEventListener("click", restartGrid);
+    
+    // Initial render.
+    renderGrid();
+  </script>
+</body>
+</html>
