@@ -1,0 +1,89 @@
+{
+    "menu": [
+      {
+        "sectionTitle": "Profile",
+        "items": [
+          {
+            "title": "Account Settings",
+            "badge": true
+          },
+          {
+            "title": "Privacy",
+            "badge": false
+          },
+          {
+            "title": "Notifications",
+            "badge": false
+          }
+        ]
+      },
+      {
+        "sectionTitle": "Messages",
+        "items": [
+          {
+            "title": "Inbox",
+            "badge": true
+          },
+          {
+            "title": "Sent",
+            "badge": false
+          },
+          {
+            "title": "Drafts",
+            "badge": false
+          },
+          {
+            "title": "Archived",
+            "badge": false
+          }
+        ]
+      },
+      {
+        "sectionTitle": "Support",
+        "items": [
+          {
+            "title": "Help Center",
+            "badge": false
+          },
+          {
+            "title": "Contact Us",
+            "badge": false
+          }
+        ]
+      },
+      {
+        "sectionTitle": "Settings",
+        "items": [
+          {
+            "title": "General",
+            "badge": false
+          },
+          {
+            "title": "Display",
+            "badge": false
+          },
+          {
+            "title": "Sound",
+            "badge": false
+          }
+        ]
+      },
+      {
+        "sectionTitle": "About",
+        "items": [
+          {
+            "title": "Version",
+            "badge": false
+          },
+          {
+            "title": "Terms of Service",
+            "badge": false
+          },
+          {
+            "title": "Privacy Policy",
+            "badge": false
+          }
+        ]
+      }
+    ]
+}
