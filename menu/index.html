@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menu Demo</title>
+  <style>
+    /* iOS-style phone container (light mode) */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .iphone-container {
+      width: 90vw;
+      max-width: 375px;
+      height: 90vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      flex: 0 0 auto;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+      color: #333;
+      font-weight: normal;
+    }
+    .content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    .footer {
+      flex: 0 0 auto;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      padding: 15px;
+      text-align: center;
+      font-size: 12px;
+      color: #333;
+    }
+    .footer a {
+      color: #007aff;
+      text-decoration: none;
+    }
+    /* Menu Section Styling */
+    .menu-section {
+      border-bottom: 1px solid #eee;
+      margin-bottom: 10px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 10px;
+      cursor: pointer;
+      position: relative;
+      background: #f9f9f9;
+      transition: background 0.3s;
+    }
+    .section-header:hover {
+      background: #f0f0f0;
+    }
+    .section-title {
+      flex: 1;
+      font-size: 16px;
+      color: #333;
+    }
+    /* Use polished chevron icons: ▼ when collapsed, ▲ when expanded */
+    .chevron {
+      font-size: 16px;
+      transition: transform 0.3s;
+      color: #666;
+      margin-left: 5px;
+    }
+    /* Red dot badge for section header */
+    .section-badge {
+      position: absolute;
+      right: 40px;
+      width: 8px;
+      height: 8px;
+      background: red;
+      border-radius: 50%;
+    }
+    /* Items container (collapsible) */
+    .items-container {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease;
+    }
+    .items-container.expanded {
+      max-height: 500px;
+    }
+    /* Menu item */
+    .menu-item {
+      padding: 10px 20px;
+      font-size: 15px;
+      color: #555;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      background: #fff;
+      transition: background 0.3s;
+    }
+    .menu-item:hover {
+      background: #f7f7f7;
+    }
+    /* Red dot badge for menu items */
+    .item-badge {
+      position: absolute;
+      right: 15px;
+      width: 8px;
+      height: 8px;
+      background: red;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="header">Menu</div>
+    <div class="content" id="content"></div>
+    <div class="footer">
+      Demo App for a Coding Challenge on <a href="https://breakpoint.ghost.io/" target="_blank">Breakpoint</a>
+    </div>
+  </div>
+  
+  <script>
+    // Provided JSON data
+    const menuData = {
+      "menu": [
+        {
+          "sectionTitle": "Profile",
+          "items": [
+            { "title": "Account Settings", "badge": true },
+            { "title": "Privacy", "badge": false },
+            { "title": "Notifications", "badge": false }
+          ]
+        },
+        {
+          "sectionTitle": "Messages",
+          "items": [
+            { "title": "Inbox", "badge": true },
+            { "title": "Sent", "badge": false },
+            { "title": "Drafts", "badge": false },
+            { "title": "Archived", "badge": false }
+          ]
+        },
+        {
+          "sectionTitle": "Support",
+          "items": [
+            { "title": "Help Center", "badge": false },
+            { "title": "Contact Us", "badge": false }
+          ]
+        },
+        {
+          "sectionTitle": "Settings",
+          "items": [
+            { "title": "General", "badge": false },
+            { "title": "Display", "badge": false },
+            { "title": "Sound", "badge": false }
+          ]
+        },
+        {
+          "sectionTitle": "About",
+          "items": [
+            { "title": "Version", "badge": false },
+            { "title": "Terms of Service", "badge": false },
+            { "title": "Privacy Policy", "badge": false }
+          ]
+        }
+      ]
+    };
+
+    const contentEl = document.getElementById("content");
+    let expandedSection = null;
+
+    function renderMenu() {
+      contentEl.innerHTML = "";
+      menuData.menu.forEach((section, sectionIndex) => {
+        const sectionEl = document.createElement("div");
+        sectionEl.classList.add("menu-section");
+
+        // Create header
+        const headerEl = document.createElement("div");
+        headerEl.classList.add("section-header");
+
+        const titleEl = document.createElement("div");
+        titleEl.classList.add("section-title");
+        titleEl.textContent = section.sectionTitle;
+        headerEl.appendChild(titleEl);
+
+        // Use a polished chevron: when collapsed, face downward (▼); when expanded, face upward (▲)
+        const chevronEl = document.createElement("div");
+        chevronEl.classList.add("chevron");
+        // Initially collapsed → chevron down.
+        chevronEl.textContent = "▼";
+        headerEl.appendChild(chevronEl);
+
+        // Section badge: if any item is badged, show a red dot when collapsed.
+        let sectionBadge = null;
+        if (section.items.some(item => item.badge)) {
+          sectionBadge = document.createElement("div");
+          sectionBadge.classList.add("section-badge");
+          headerEl.appendChild(sectionBadge);
+        }
+
+        // Create items container.
+        const itemsContainer = document.createElement("div");
+        itemsContainer.classList.add("items-container");
+        section.items.forEach(item => {
+          const itemEl = document.createElement("div");
+          itemEl.classList.add("menu-item");
+          itemEl.textContent = item.title;
+          if (item.badge) {
+            const badgeEl = document.createElement("div");
+            badgeEl.classList.add("item-badge");
+            itemEl.appendChild(badgeEl);
+          }
+          itemsContainer.appendChild(itemEl);
+        });
+
+        // Click handler: toggle current section and collapse any other expanded section concurrently.
+        headerEl.addEventListener("click", () => {
+          // If current section is expanded, collapse it.
+          if (itemsContainer.classList.contains("expanded")) {
+            itemsContainer.classList.remove("expanded");
+            chevronEl.textContent = "▼";
+            if (sectionBadge) sectionBadge.style.display = "block";
+            expandedSection = null;
+          } else {
+            // Collapse the previously expanded section concurrently.
+            if (expandedSection && expandedSection !== itemsContainer) {
+              expandedSection.classList.remove("expanded");
+              const prevHeader = expandedSection.previousElementSibling;
+              if (prevHeader) {
+                const prevChevron = prevHeader.querySelector(".chevron");
+                if (prevChevron) {
+                  prevChevron.textContent = "▼";
+                }
+                const prevBadge = prevHeader.querySelector(".section-badge");
+                if (prevBadge) {
+                  prevBadge.style.display = "block";
+                }
+              }
+            }
+            // Expand the current section.
+            itemsContainer.classList.add("expanded");
+            chevronEl.textContent = "▲";
+            if (sectionBadge) sectionBadge.style.display = "none";
+            expandedSection = itemsContainer;
+          }
+        });
+        
+        sectionEl.appendChild(headerEl);
+        sectionEl.appendChild(itemsContainer);
+        contentEl.appendChild(sectionEl);
+      });
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
